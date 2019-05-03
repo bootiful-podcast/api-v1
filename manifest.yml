@@ -4,5 +4,5 @@ applications:
     buildpack: java
     services:
       - podcast-production-processor-rmq
-env:
-  - SPRING_PROFILES_ACTIVE=ci
+  env:
+    SPRING_PROFILES_ACTIVE=ci

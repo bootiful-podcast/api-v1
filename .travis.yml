@@ -17,6 +17,6 @@ install:
   - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V -U
 
 script:
-  - mvn -e verify deploy
+  - mvn -e install
   - ./deploy/cf.sh
   - ./deploy/deploy.sh
