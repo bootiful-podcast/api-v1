@@ -1,7 +1,6 @@
 ---
 applications:
   - name: rmq-integration
-    host: rmq-integration-${random-word}
     path: target/integration-0.0.1-SNAPSHOT.jar
     buildpack: https://github.com/cloudfoundry/java-buildpack.git
     services:
