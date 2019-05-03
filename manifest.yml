@@ -1,0 +1,8 @@
+---
+applications:
+  - name: rmq-integration
+    buildpack: java
+    services:
+      - podcast-production-processor-rmq
+  env:
+    SPRING_PROFILES_ACTIVE: cloud
