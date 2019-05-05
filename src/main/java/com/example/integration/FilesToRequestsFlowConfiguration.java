@@ -52,24 +52,24 @@ class FilesToRequestsFlowConfiguration {
 						pc -> pc.poller(pm -> pm.fixedRate(500, TimeUnit.MILLISECONDS))) //
 				.filter(File.class, this::isValidPodcastFile) //
 				.transform(new FileToStringTransformer()) //
-			.transform((Transformer) message -> {
-				var json = (String) message.getPayload();
-				var headers = message.getHeaders();
-				return MessageBuilder.withPayload(toProductionRequest(headers, json))
-					.copyHeadersIfAbsent(message.getHeaders()).build();
-			})//
-			.handle(new LoggingHandler()) //
+				.transform((Transformer) message -> {
+					var json = (String) message.getPayload();
+					var headers = message.getHeaders();
+					return MessageBuilder.withPayload(toProductionRequest(headers, json))
+							.copyHeadersIfAbsent(message.getHeaders()).build();
+				})//
+				.handle(new LoggingHandler()) //
 				.channel(requestsFlow.rabbitRequestsChannel()) //
 				.get();
 	}
 
 	private ProductionRequest toProductionRequest(Map<String, Object> headers,
-																																															String json) {
+			String json) {
 		var manifestFile = (File) headers.get(FileHeaders.ORIGINAL_FILE);
 		var body = this.fromJson(json);
 		var nameOfFile = manifestFile.getName();
 		return new ProductionRequest(body.getInterviewWav(), body.getIntroductionWav(),
-			nameOfFile, body.getTimestamp(), body.getDescription());
+				nameOfFile, body.getTimestamp(), body.getDescription());
 	}
 
 	private boolean isValidPodcastFile(File file) {

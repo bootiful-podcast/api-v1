@@ -24,7 +24,7 @@ class ProductionRequest {
 
 	public ProductionRequest(String interview, String intro, String manifest,
 																										String timestamp, String description) {
-		this.introductionWav = intro;
+		this.introductionWav = intro;b
 		this.interviewWav = interview;
 		this.manifest = manifest;
 		this.timestamp = timestamp;
