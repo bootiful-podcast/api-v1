@@ -20,4 +20,19 @@ class ProductionRequest {
 
 	private String timestamp;
 
+	@JsonProperty("manifest")
+	private String manifest;
+
+	ProductionRequest() {
+	}
+
+	public ProductionRequest(String interview, String intro, String manifest,
+																										String timestamp, String description) {
+		this.introductionWav = intro;
+		this.interviewWav = interview;
+		this.manifest = manifest;
+		this.timestamp = timestamp;
+		this.description = description;
+	}
+
 }

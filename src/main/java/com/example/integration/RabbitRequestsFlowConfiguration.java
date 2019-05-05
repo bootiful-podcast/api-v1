@@ -36,7 +36,10 @@ class RabbitRequestsFlowConfiguration {
 				.handle((o, messageHeaders) -> {
 					Assert.isTrue(o instanceof ProductionRequest, message);
 					return o;
-				}).transform(this::toJson).handle(amqpOutboundAdapter).get();
+				}) //
+			.transform(this::toJson) //
+			.handle(amqpOutboundAdapter) //
+			.get();
 	}
 
 	@Bean

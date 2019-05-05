@@ -6,7 +6,6 @@ cf push -b java_buildpack --no-start -p target/integration-0.0.1-SNAPSHOT.jar ${
 
 cf set-env ${APP_NAME} JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+}}'
 
-
 cf set-env $APP_NAME CF_API $CF_API
 cf set-env $APP_NAME CF_API_ENDPOINT $CF_API_ENDPOINT
 cf set-env $APP_NAME CF_ORG $CF_ORG
