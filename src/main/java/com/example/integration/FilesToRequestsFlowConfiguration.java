@@ -68,7 +68,7 @@ class FilesToRequestsFlowConfiguration {
 		var manifestFile = (File) headers.get(FileHeaders.ORIGINAL_FILE);
 		var body = this.fromJson(json);
 		var nameOfFile = manifestFile.getName();
-		return new ProductionRequest(body.getInterviewWav(), body.getIntroductionWav(),
+		return new ProductionRequest(body.getInterviewFile(), body.getIntroductionFile(),
 				nameOfFile, body.getTimestamp(), body.getDescription());
 	}
 
