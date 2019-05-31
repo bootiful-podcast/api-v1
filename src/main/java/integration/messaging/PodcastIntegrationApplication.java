@@ -1,4 +1,4 @@
-package com.example.integration;
+package integration.messaging;
 
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.SpringApplication;
@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import reactor.core.publisher.Mono;
 
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 

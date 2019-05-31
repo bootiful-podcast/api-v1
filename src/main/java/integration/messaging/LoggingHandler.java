@@ -1,4 +1,4 @@
-package com.example.integration;
+package integration.messaging;
 
 import lombok.extern.log4j.Log4j2;
 import org.springframework.integration.handler.GenericHandler;

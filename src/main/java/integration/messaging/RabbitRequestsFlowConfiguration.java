@@ -1,4 +1,4 @@
-package com.example.integration;
+package integration.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.example.integration;
+package integration.messaging;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.*;
