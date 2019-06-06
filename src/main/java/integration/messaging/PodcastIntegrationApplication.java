@@ -3,14 +3,7 @@ package integration.messaging;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.web.reactive.function.server.RouterFunction;
-import org.springframework.web.reactive.function.server.ServerResponse;
-
-import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 /**
  * this will establish a monitor for Dropbox and publish an event whenever a new file
@@ -25,28 +18,6 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 @SpringBootApplication
 @EnableConfigurationProperties(PodcastIntegrationProperties.class)
 public class PodcastIntegrationApplication {
-
-	PodcastIntegrationApplication(RabbitProperties rabbitProperties) {
-		log.info("RabbitMQ address: " + rabbitProperties.getAddresses());
-	}
-
-	@Bean
-	RouterFunction<ServerResponse> routes(RabbitRequestsFlowConfiguration requests) {
-
-		var channel = requests.rabbitRequestsChannel();
-
-		return route() //
-				.POST("/start", request -> {
-					var aClass = ProductionRequest.class;
-					var productionRequestMono = request.bodyToMono(aClass).map(pr -> {
-						var msg = MessageBuilder.withPayload(pr).build();
-						channel.send(msg);
-						return pr;
-					});
-					return ServerResponse.ok().body(productionRequestMono, aClass);
-				}) //
-				.build();
-	}
 
 	public static void main(String[] args) {
 		SpringApplication.run(PodcastIntegrationApplication.class, args);
