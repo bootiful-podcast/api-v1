@@ -65,8 +65,8 @@ public class PackageService {
 	@SneakyThrows
 	String xmlFor(String description, String uid, Media mp3, Media wav) {
 
-		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+		var docFactory = DocumentBuilderFactory.newInstance();
+		var docBuilder = docFactory.newDocumentBuilder();
 
 		var doc = docBuilder.newDocument();
 		var rootElement = doc.createElement("podcast");
