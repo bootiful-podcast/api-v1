@@ -16,11 +16,19 @@
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
-        <!--        <spring-cloud.version>Hoxton.BUILD-SNAPSHOT</spring-cloud.version>-->
+<!--        <aws-java-sdk.version>1.11.18</aws-java-sdk.version>-->
+        <aws-java-sdk.version>1.11.567</aws-java-sdk.version>
         <java.version>11</java.version>
     </properties>
-
     <dependencies>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sts</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
@@ -33,10 +41,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-       <!-- <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-stream</artifactId>
-        </dependency>-->
+        <!-- <dependency>
+             <groupId>org.springframework.cloud</groupId>
+             <artifactId>spring-cloud-stream</artifactId>
+         </dependency>-->
         <dependency>
             <groupId>org.springframework.integration</groupId>
             <artifactId>spring-integration-amqp</artifactId>
@@ -77,17 +85,21 @@
           -->
     </dependencies>
 
-<!--    <dependencyManagement>
+
+    <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk</artifactId>
+                <version>${aws-java-sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-sts</artifactId>
+                <version>${aws-java-sdk.version}</version>
             </dependency>
         </dependencies>
-    </dependencyManagement>-->
+    </dependencyManagement>
 
     <build>
         <plugins>
