@@ -25,9 +25,11 @@ import java.util.function.Function;
 class AwsConfiguration {
 
 	@SneakyThrows
-	private static void readFileIntoEnvironment(File file, String psPrefix, AbstractEnvironment environment, Function<String, String> mapper) {
+	private static void readFileIntoEnvironment(File file, String psPrefix,
+			AbstractEnvironment environment, Function<String, String> mapper) {
 
-		Assert.isTrue(file.exists(), "the AWS credentials file, " + file.getAbsolutePath() + ", must exist.");
+		Assert.isTrue(file.exists(),
+				"the AWS credentials file, " + file.getAbsolutePath() + ", must exist.");
 		try (var reader = new FileReader(file)) {
 			var propertyProperties = new Properties();
 			propertyProperties.load(reader);
@@ -46,27 +48,26 @@ class AwsConfiguration {
 	@SneakyThrows
 	AwsConfiguration(AbstractEnvironment environment) {
 		var awsRoot = new File(System.getProperty("user.home"), ".aws");
-		readFileIntoEnvironment(new File(awsRoot, "credentials"), "aws-credentials", environment, (key) -> key);
-		readFileIntoEnvironment(new File(awsRoot, "config"), "aws-config", environment, k -> {
-			if (k.equalsIgnoreCase("region")) {
-				return "aws_region";
-			}
-			return k;
-		});
+		readFileIntoEnvironment(new File(awsRoot, "credentials"), "aws-credentials",
+				environment, (key) -> key);
+		readFileIntoEnvironment(new File(awsRoot, "config"), "aws-config", environment,
+				k -> {
+					if (k.equalsIgnoreCase("region")) {
+						return "aws_region";
+					}
+					return k;
+				});
 	}
 
 	@Bean
-	AmazonS3 amazonS3(
-		@Value("${aws_access_key_id}") String accessKey,
-		@Value("${aws_secret_access_key}") String secret,
-		@Value("${aws_region}") String region) {
+	AmazonS3 amazonS3(@Value("${aws_access_key_id}") String accessKey,
+			@Value("${aws_secret_access_key}") String secret,
+			@Value("${aws_region}") String region) {
 
 		var credentials = new BasicAWSCredentials(accessKey, secret);
-		return AmazonS3ClientBuilder
-			.standard()
-			.withCredentials(new AWSStaticCredentialsProvider(credentials))
-			.withRegion(Regions.fromName(region))
-			.build();
+		return AmazonS3ClientBuilder.standard()
+				.withCredentials(new AWSStaticCredentialsProvider(credentials))
+				.withRegion(Regions.fromName(region)).build();
 	}
 
 }

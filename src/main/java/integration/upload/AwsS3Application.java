@@ -11,4 +11,3 @@ public class AwsS3Application {
 	}
 
 }
-
