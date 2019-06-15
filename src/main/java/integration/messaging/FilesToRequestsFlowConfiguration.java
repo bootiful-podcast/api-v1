@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Requests from Dropbox that need to be processed by the Python processor.
  */
-
 @Log4j2
 @Configuration
 class FilesToRequestsFlowConfiguration {
