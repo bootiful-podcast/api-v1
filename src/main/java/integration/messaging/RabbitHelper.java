@@ -10,7 +10,7 @@ class RabbitHelper {
 
 	private final AmqpAdmin amqpAdmin;
 
-	public void defineDestination(String exchange, String queue, String routingKey) {
+	void defineDestination(String exchange, String queue, String routingKey) {
 
 		Queue q = this.queue(queue);
 		Exchange e = this.exchange(exchange);
