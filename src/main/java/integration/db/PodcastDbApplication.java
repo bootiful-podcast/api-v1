@@ -20,13 +20,14 @@ import java.util.List;
 @SpringBootApplication
 public class PodcastDbApplication {
 
-public static void main(String[] args) {
-SpringApplication.run(PodcastDbApplication.class, args);
-}
-}
+	public static void main(String[] args) {
+		SpringApplication.run(PodcastDbApplication.class, args);
+	}
 
+}
 
 interface PodcastRepository extends CrudRepository<Podcast, Long> {
+
 }
 
 @Data
@@ -35,31 +36,27 @@ interface PodcastRepository extends CrudRepository<Podcast, Long> {
 @Entity
 class Media {
 
-@Id
-@GeneratedValue
-private Long id;
+	@Id
+	@GeneratedValue
+	private Long id;
+	@ManyToMany(mappedBy = "media")
+	private List<Podcast> podcasts = new ArrayList<>();
+	private String href, description, extension, type;
 
-@ManyToMany(mappedBy = "media")
-private List<Podcast> podcasts = new ArrayList<>();
-
-private String href, description, extension, type;
 }
 
 @Component
 @RequiredArgsConstructor
 class Initializer {
 
-private final PodcastRepository repository;
+	private final PodcastRepository repository;
 
-@EventListener(ApplicationReadyEvent.class)
-public void init() {
+	@EventListener(ApplicationReadyEvent.class)
+	public void init() {
+		var podcast = new Podcast(null, "title", "description", "notes", "transcript", new Date(), Collections.emptyList(), Collections.emptyList());
+		repository.save(podcast);
+	}
 
-Podcast podcast = new Podcast(null, "title", "description", "notes", "transcript", new Date(),
-Collections.emptyList(),
-Collections.emptyList());
-repository.save(podcast);
-
-}
 }
 
 @Entity
@@ -68,32 +65,24 @@ repository.save(podcast);
 @NoArgsConstructor
 class Podcast {
 
-@Id
-@GeneratedValue
-private Long id;
-private String title, description, notes, transcript;
-private Date date;
+	@Id
+	@GeneratedValue
+	private Long id;
 
-@ManyToMany(cascade = {
-CascadeType.PERSIST,
-CascadeType.MERGE
-})
-@JoinTable(name = "podcast_link",
-joinColumns = @JoinColumn(name = "podcast_id"),
-inverseJoinColumns = @JoinColumn(name = "link_id")
-)
-private List<Link> links = new ArrayList<>();
+	private String title, description, notes, transcript;
 
+	private Date date;
 
-@ManyToMany(cascade = {
-CascadeType.PERSIST,
-CascadeType.MERGE
-})
-@JoinTable(name = "podcast_media",
-joinColumns = @JoinColumn(name = "podcast_id"),
-inverseJoinColumns = @JoinColumn(name = "media_id")
-)
-private List<Media> media = new ArrayList<>();
+	@ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+	@JoinTable(name = "podcast_link", joinColumns = @JoinColumn(name = "podcast_id"),
+		inverseJoinColumns = @JoinColumn(name = "link_id"))
+	private List<Link> links = new ArrayList<>();
+
+	@ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+	@JoinTable(name = "podcast_media", joinColumns = @JoinColumn(name = "podcast_id"),
+		inverseJoinColumns = @JoinColumn(name = "media_id"))
+	private List<Media> media = new ArrayList<>();
+
 }
 
 @Entity
@@ -102,11 +91,13 @@ private List<Media> media = new ArrayList<>();
 @NoArgsConstructor
 class Link {
 
-@Id
-@GeneratedValue
-private Long id;
-private String href, description;
+	@Id
+	@GeneratedValue
+	private Long id;
 
-@ManyToMany(mappedBy = "links")
-private List<Podcast> podcasts = new ArrayList<>();
+	private String href, description;
+
+	@ManyToMany(mappedBy = "links")
+	private List<Podcast> podcasts = new ArrayList<>();
+
 }
