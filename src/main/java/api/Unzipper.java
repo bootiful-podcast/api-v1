@@ -12,13 +12,14 @@ import java.util.Collection;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-
 class Unzipper {
 
 	public static Collection<File> unzip(File zipfile, File targetDirectory) {
 		var list = new ArrayList<File>();
-//		var localRoot = new File(this.root, UUID.randomUUID().toString());
-		Assert.isTrue(targetDirectory.exists() || targetDirectory.mkdirs(), "The " + targetDirectory.getAbsolutePath() + " does not exist and couldn't be created");
+		// var localRoot = new File(this.root, UUID.randomUUID().toString());
+		Assert.isTrue(targetDirectory.exists() || targetDirectory.mkdirs(),
+				"The " + targetDirectory.getAbsolutePath()
+						+ " does not exist and couldn't be created");
 		unzip(zipfile, targetDirectory, list);
 		return list;
 	}
@@ -48,9 +49,9 @@ class Unzipper {
 		var destDirPath = destinationDir.getCanonicalPath();
 		var destFilePath = destFile.getCanonicalPath();
 		var entryIsInTargetDirectory = destFilePath
-			.startsWith(destDirPath + File.separator);
+				.startsWith(destDirPath + File.separator);
 		Assert.isTrue(entryIsInTargetDirectory,
-			"Entry is outside of the target dir: " + zipEntry.getName());
+				"Entry is outside of the target dir: " + zipEntry.getName());
 		return destFile;
 	}
 

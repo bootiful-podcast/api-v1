@@ -29,12 +29,7 @@ public class ApiApplication {
 	}
 
 	private final File staging;
-
-	ApiApplication(@Value("${podcast.uploads.staging}") File staging) {
-		this.staging = staging;
-		log.info("the staging directory, where uploaded files will be stored and processed for upload, is " + this.staging.getAbsolutePath());
-		Assert.isTrue(this.staging.exists() || this.staging.mkdirs(), "the directory " + this.staging.getAbsolutePath() + " doesn't exist");
-	}
+	private final PackageProcessIntegrationChannels channels;
 
 	private final GenericHandler<File> unzipHandler = new GenericHandler<>() {
 
@@ -42,15 +37,24 @@ public class ApiApplication {
 		public Object handle(File file, MessageHeaders messageHeaders) {
 			var dest = new File(staging, UUID.randomUUID().toString());
 			Unzipper.unzip(file, dest);
-			log.info("unzipping " + file.getAbsolutePath() + " to " + dest.getAbsolutePath());
-			return MessageBuilder
-				.withPayload(dest)
-				.build();
+			log.info("unzipping " + file.getAbsolutePath() + " to "
+				+ dest.getAbsolutePath());
+			return MessageBuilder.withPayload(dest).build();
 		}
 	};
 
+	ApiApplication(@Value("${podcast.uploads.staging}") File staging,
+																PackageProcessIntegrationChannels channels) {
+		this.staging = staging;
+		this.channels = channels;
+		log.info("the staging directory, where uploaded files will be stored and processed for upload, is "
+			+ this.staging.getAbsolutePath());
+		Assert.isTrue(this.staging.exists() || this.staging.mkdirs(),
+			"the directory " + this.staging.getAbsolutePath() + " doesn't exist");
+	}
+
 	@Bean
-	IntegrationFlow integrationFlow(PackageProcessIntegrationChannels channels) {
+	IntegrationFlow integrationFlow() {
 		return IntegrationFlows
 			.from(channels.productionChannel())
 			.handle(File.class, this.unzipHandler)
@@ -59,8 +63,7 @@ public class ApiApplication {
 					log.info("file: " + f.getAbsolutePath());
 				}
 				return null;
-			})
-			.get();
+			}).get();
 	}
 
 	@Bean
@@ -69,12 +72,4 @@ public class ApiApplication {
 		return new PackageUploadController(this.staging, channels.productionChannel());
 	}
 
-	/*
-	@Bean
-	ApplicationRunner run() {
-		return args -> {
-
-		};
-	}
-	*/
 }

@@ -18,45 +18,34 @@ import java.util.Collections;
 class PackageUploadController {
 
 	private final File file;
+
 	private final MessageChannel productionChannel;
 
-	PackageUploadController(File staging,
-																									MessageChannel channel) {
+	PackageUploadController(File staging, MessageChannel channel) {
 		this.file = staging;
 		this.productionChannel = channel;
 	}
 
 	private String buildMessage(String id, MultipartFile file) {
-		var details = new String[]{
-			System.lineSeparator(),
-			"ID: " + id,
-			"original file name: " + file.getOriginalFilename(),
-			"size: " + file.getSize(),
-			"content-type: " + file.getContentType()
-		};
-		return StringUtils
-			.arrayToDelimitedString(details, System.lineSeparator());
+		var details = new String[] { System.lineSeparator(), "ID: " + id,
+				"original file name: " + file.getOriginalFilename(),
+				"size: " + file.getSize(), "content-type: " + file.getContentType() };
+		return StringUtils.arrayToDelimitedString(details, System.lineSeparator());
 	}
 
 	@PostMapping("/production")
-	ResponseEntity<?> beginProduction(
-		@RequestParam("id") String id,
-		@RequestParam("file") MultipartFile file) throws Exception {
+	ResponseEntity<?> beginProduction(@RequestParam("id") String id,
+			@RequestParam("file") MultipartFile file) throws Exception {
 		log.info(this.buildMessage(id, file));
 		var newFile = new File(this.file, id);
 		file.transferTo(newFile);
 
-		var msg = MessageBuilder
-			.withPayload(newFile)
-			.setHeader(PackageProcessHeaders.PACKAGE_ID_HEADER, id)
-			.build();
+		var msg = MessageBuilder.withPayload(newFile)
+				.setHeader(PackageProcessHeaders.PACKAGE_ID_HEADER, id).build();
 		this.productionChannel.send(msg);
 
-		return ResponseEntity
-			.accepted()
-			.body(Collections.singletonMap("status", "OK"));
+		return ResponseEntity.accepted().body(Collections.singletonMap("status", "OK"));
 
 	}
-
 
 }

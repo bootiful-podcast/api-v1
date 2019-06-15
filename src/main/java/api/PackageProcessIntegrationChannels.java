@@ -12,4 +12,5 @@ class PackageProcessIntegrationChannels {
 	MessageChannel productionChannel() {
 		return MessageChannels.direct().get();
 	}
+
 }
