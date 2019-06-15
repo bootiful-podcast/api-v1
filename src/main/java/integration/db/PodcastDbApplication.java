@@ -23,11 +23,9 @@ public class PodcastDbApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(PodcastDbApplication.class, args);
 	}
-
 }
 
 interface PodcastRepository extends CrudRepository<Podcast, Long> {
-
 }
 
 @Data
@@ -39,8 +37,10 @@ class Media {
 	@Id
 	@GeneratedValue
 	private Long id;
+
 	@ManyToMany(mappedBy = "media")
 	private List<Podcast> podcasts = new ArrayList<>();
+
 	private String href, description, extension, type;
 
 }
