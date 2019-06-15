@@ -40,9 +40,7 @@ class Media {
 
 	@ManyToMany(mappedBy = "media")
 	private List<Podcast> podcasts = new ArrayList<>();
-
 	private String href, description, extension, type;
-
 }
 
 @Component
@@ -53,7 +51,8 @@ class Initializer {
 
 	@EventListener(ApplicationReadyEvent.class)
 	public void init() {
-		var podcast = new Podcast(null, "title", "description", "notes", "transcript", new Date(), Collections.emptyList(), Collections.emptyList());
+		var podcast = new Podcast(null, "title", "description", "notes", "transcript",
+				new Date(), Collections.emptyList(), Collections.emptyList());
 		repository.save(podcast);
 	}
 
@@ -73,14 +72,14 @@ class Podcast {
 
 	private Date date;
 
-	@ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	@JoinTable(name = "podcast_link", joinColumns = @JoinColumn(name = "podcast_id"),
-		inverseJoinColumns = @JoinColumn(name = "link_id"))
+			inverseJoinColumns = @JoinColumn(name = "link_id"))
 	private List<Link> links = new ArrayList<>();
 
-	@ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	@JoinTable(name = "podcast_media", joinColumns = @JoinColumn(name = "podcast_id"),
-		inverseJoinColumns = @JoinColumn(name = "media_id"))
+			inverseJoinColumns = @JoinColumn(name = "media_id"))
 	private List<Media> media = new ArrayList<>();
 
 }
