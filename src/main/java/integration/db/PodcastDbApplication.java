@@ -1,6 +1,7 @@
 package integration.db;
 
 import lombok.*;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -9,8 +10,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.persistence.*;
@@ -29,11 +28,14 @@ public class PodcastDbApplication {
 	TransactionTemplate transactionTemplate(PlatformTransactionManager txm) {
 		return new TransactionTemplate(txm);
 	}
+
 }
 
 interface PodcastRepository extends CrudRepository<Podcast, Long> {
+
 }
 
+@Log4j2
 @Component
 @RequiredArgsConstructor
 class Initializer {
@@ -44,36 +46,37 @@ class Initializer {
 
 	@EventListener(ApplicationReadyEvent.class)
 	public void init() {
-		this.template.execute(new TransactionCallbackWithoutResult() {
+		Podcast saved = this.template.execute(status -> {
 
-			@Override
-			protected void doInTransactionWithoutResult(TransactionStatus status) {
+			var links = List.of(
+				Link.builder().description("Cornelia on Twitter")
+					.href("http://twitter.com/cfdavisaf").build(),
+				Link.builder().description("Cloud Native Patterns").href(
+					"https://www.manning.com/books/cloud-native-patterns")
+					.build());
 
-				var links = List.of(
-					Link.builder().description("Cornelia on Twitter").href("http://twitter.com/cfdavisaf").build(),
-					Link.builder().description("Cloud Native Patterns").href("https://www.manning.com/books/cloud-native-patterns").build()
-				);
+			var media = List.of(Media.builder().type(Media.TYPE_INTERVIEW)
+					.href("http://s3.com/media/cornelia_davis/2322-interview.wav")
+					.extension(Media.EXTENSION_WAV).build(),
+				Media.builder().type(Media.TYPE_INTRODUCTION).href(
+					"http://s3.com/media/cornelia_davis/2322-introduction.wav")
+					.extension(Media.EXTENSION_WAV).build());
 
-				var media = List.of(
-					Media.builder().type(Media.TYPE_INTERVIEW).href("http://s3.com/media/cornelia_davis/2322-interview.wav").extension(Media.EXTENSION_WAV).build(),
-					Media.builder().type(Media.TYPE_INTRODUCTION).href("http://s3.com/media/cornelia_davis/2322-introduction.wav").extension(Media.EXTENSION_WAV).build()
-				);
+			var podcast = Podcast.builder().media(media).links(links)
+				.title("Cornelia Davis on  her new book 'Cloud Native Patterns'")
+				.description(
+					"Join Pivotal SVP Cornelia Davis for a look at what it is to build cool things")
+				.transcript("TODO")
+				.notes("I couldn't find that photo I took of us together so I just used her Twitter profile picture (with her permission)")
+				.build();
 
-				var podcast = Podcast.builder()
-					.media(media)
-					.links(links)
-					.title("Cornelia Davis on  her new book 'Cloud Native Patterns'")
-					.description("Join Pivotal SVP Cornelia Davis for a look at what it is to build cool things")
-					.transcript("TODO")
-					.notes("I couldn't find that photo I took of us together so I just used her Twitter profile picture (with her permission)")
-					.build();
-
-				repository.save(podcast);
-			}
+			return repository.save(podcast);
 		});
 
-	}
 
+		log.info("saved " + Podcast.class.getName() + "#" + saved.getId());
+
+	}
 
 }
 
@@ -85,9 +88,11 @@ class Initializer {
 class Media {
 
 	public static final String EXTENSION_WAV = "wav";
+
 	public static final String EXTENSION_MP3 = "mp3";
 
 	public static final String TYPE_INTRODUCTION = "introduction";
+
 	public static final String TYPE_INTERVIEW = "interview";
 
 	@Id
@@ -98,7 +103,6 @@ class Media {
 	private List<Podcast> podcasts = new ArrayList<>();
 
 	private String href, description, extension, type;
-
 
 }
 
