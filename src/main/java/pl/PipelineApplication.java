@@ -158,9 +158,7 @@ class S3FlowConfiguration {
 	private final Function<File, Collection<Message<File>>> unzipSplitter;
 
 	private final GenericHandler<File> s3UploadHandler;
-
-	static final String FILE_ROLE_INTERVIEW = "interview";
-	static final String FILE_ROLE_INTRODUCTION = "introduction";
+	private final Consumer<AggregatorSpec> aggregator;
 
 	S3FlowConfiguration(PipelineProperties properties, AwsS3Service s3,
 																					ChannelsConfiguration channels) {
@@ -186,16 +184,15 @@ class S3FlowConfiguration {
 					.setHeader(Headers.CONTENT_TYPE, determineContentTypeFor(f))//
 					.setHeader(Headers.PACKAGE_MANIFEST, upm);
 
-
 				for (var media : upm.getMedia()) {
 					var interview = media.getInterview();
 					var introduction = media.getIntroduction();
-					builder.setHeader(Headers.IS_INTERVIEW_FILE, f.getName().contains(interview));
-					builder.setHeader(Headers.IS_INTRODUCTION_FILE, f.getName().contains(introduction));
+					builder.setHeader(Headers.IS_INTERVIEW_FILE,
+						f.getName().contains(interview));
+					builder.setHeader(Headers.IS_INTRODUCTION_FILE,
+						f.getName().contains(introduction));
 				}
-
-				return builder//
-					.build();
+				return builder.build();
 			})//
 				.collect(Collectors.toList());
 		};
@@ -208,31 +205,43 @@ class S3FlowConfiguration {
 				.setHeader(Headers.S3_PATH, s3Path) //
 				.build();
 		};
+		this.aggregator = spec -> spec.outputProcessor(group -> {
+			var messages = group.getMessages();
+			var uid = (String) null;
+			var request = new HashMap<String, String>();
+			for (var msg : messages) {
+				establishHeaderIfMatches(request, msg, Headers.IS_INTRODUCTION_FILE, "introduction-file");
+				establishHeaderIfMatches(request, msg, Headers.IS_INTERVIEW_FILE, "interview-file");
+				var manifest = (UploadPackageManifest) msg.getHeaders().get(Headers.PACKAGE_MANIFEST);
+				uid = Objects.requireNonNull(manifest).getUid();
+			}
+			request.put("uid", uid);
+			return request;
+		});
+
 	}
 
+	private void establishHeaderIfMatches(HashMap<String, String> request, Message<?> msg, String header, String newKey) {
+		if (isTrue(msg.getHeaders(), header)) {
+			request.put(newKey, (String) msg.getHeaders().get(Headers.S3_PATH));
+		}
+	}
 	// todo there's got to be a better way to do this.
 	// todo wasn't there a handler thing in Java itself?
 
 	private static String determineContentTypeFor(File file) {
 		Assert.notNull(file, "the file must not be null");
+		var map = new HashMap<String, String>();
+		map.put("wav", "audio/wav");
+		map.put("mp3", "audio/mp3");
+		map.put("xml", "application/xml");
 		var fn = file.getName().toLowerCase();
-		if (fn.endsWith(".wav"))
-			return "audio/wav";
-		if (fn.endsWith(".mp3"))
-			return "audio/mp3";
-		if (fn.endsWith(".xml"))
-			return "application/xml";
+		for (String ext : map.keySet()) {
+			if (fn.endsWith(ext)) {
+				return map.get(ext);
+			}
+		}
 		throw new RuntimeException("Invalid file-type!");
-	}
-
-	@Data
-	@Builder
-	@AllArgsConstructor
-	@NoArgsConstructor
-	public static class ProcessorManifest {
-		private String introductionS3Path;
-		private String interviewS3Path;
-		private String uid;
 	}
 
 	private boolean isTrue(MessageHeaders headers, String header) {
@@ -243,40 +252,12 @@ class S3FlowConfiguration {
 	@Bean
 	IntegrationFlow audioProcessorPreparationPipeline() {
 
-		Consumer<AggregatorSpec> aggregator = spec ->
-			spec
-				.outputProcessor(group -> {
-
-					var messages = group.getMessages();
-					var upm = (String) null;
-					var request = new HashMap<String, String>();
-					for (Message<?> msg : messages) {
-						if (isTrue(msg.getHeaders(), Headers.IS_INTRODUCTION_FILE)) {
-							request.put("introduction-file", (String) msg.getHeaders().get(Headers.S3_PATH));
-						}
-						if (isTrue(msg.getHeaders(), Headers.IS_INTERVIEW_FILE)) {
-							request.put("interview-file", (String) msg.getHeaders().get(Headers.S3_PATH));
-						}
-						upm = request.get(Headers.PACKAGE_MANIFEST);
-					}
-					request.put("uid", upm);
-					return request;
-
-				});
-
 		return IntegrationFlows//
 			.from(this.channels.apiToPipelineChannel()) //
 			.split(File.class, this.unzipSplitter) //
 			.handle(File.class, this.s3UploadHandler) //
-			.aggregate(aggregator)
-			.handle(new GenericHandler<Object>() {
-				@Override
-				public Object handle(Object o, MessageHeaders messageHeaders) {
-					log.info("after the release:  ");
-					return null;
-				}
-			})
-//			.handle(File.class, loggingHandler)//
+			.aggregate(this.aggregator)//
+			.handle((o, messageHeaders) -> o)
 			.get();
 	}
 
