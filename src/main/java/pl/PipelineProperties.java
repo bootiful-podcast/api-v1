@@ -12,6 +12,7 @@ import java.io.File;
 class PipelineProperties {
 
 	private S3 s3 = new S3();
+
 	private Processor processor = new Processor();
 
 	@Data
@@ -22,7 +23,6 @@ class PipelineProperties {
 		private File stagingDirectory;
 
 	}
-
 
 	@Data
 	public static class Processor {

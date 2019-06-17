@@ -127,7 +127,7 @@ class UploadPackageManifest {
 		var build = new UploadPackageManifest();
 		var podcast = doc.getElementsByTagName("podcast");
 		Assert.isTrue(podcast.getLength() > 0,
-			"there must be at least one podcast element in a manifest");
+				"there must be at least one podcast element in a manifest");
 		var attributes = podcast.item(0).getAttributes();
 		build.setDescription(readAttributeFrom("description", attributes));
 		build.setUid(readAttributeFrom("uid", attributes));
@@ -164,49 +164,49 @@ class S3FlowConfiguration {
 	private final Consumer<AggregatorSpec> aggregator;
 
 	S3FlowConfiguration(PipelineProperties properties, AwsS3Service s3,
-																					ChannelsConfiguration channels) {
+			ChannelsConfiguration channels) {
 		this.properties = properties;
 		this.s3 = s3;
 		this.channels = channels;
 		this.unzipSplitter = (file) -> {
 			var dest = new File(properties.getS3().getStagingDirectory(),
-				UUID.randomUUID().toString());
+					UUID.randomUUID().toString());
 			var files = Unzipper.unzip(file, dest);
 			var manifest = files.stream()
-				.filter(fn -> fn.getName().toLowerCase().endsWith("manifest.xml"))
-				.collect(Collectors.toList());
+					.filter(fn -> fn.getName().toLowerCase().endsWith("manifest.xml"))
+					.collect(Collectors.toList());
 			Assert.isTrue(manifest.size() > 0,
-				"at least one file must be a manifest.xml file for a package to be considered valid.");
+					"at least one file must be a manifest.xml file for a package to be considered valid.");
 			var manifestFile = manifest.iterator().next();
 			Assert.notNull(manifest, "the manifest must not be null");
 			var upm = UploadPackageManifest.from(manifestFile);
 
 			return files.stream().map(f -> {
 				var builder = MessageBuilder//
-					.withPayload(f)//
-					.setHeader(Headers.CONTENT_TYPE, determineContentTypeFor(f))//
-					.setHeader(Headers.PACKAGE_MANIFEST, upm);
+						.withPayload(f)//
+						.setHeader(Headers.CONTENT_TYPE, determineContentTypeFor(f))//
+						.setHeader(Headers.PACKAGE_MANIFEST, upm);
 
 				for (var media : upm.getMedia()) {
 					var interview = media.getInterview();
 					var introduction = media.getIntroduction();
 					builder.setHeader(Headers.IS_INTERVIEW_FILE,
-						f.getName().contains(interview));
+							f.getName().contains(interview));
 					builder.setHeader(Headers.IS_INTRODUCTION_FILE,
-						f.getName().contains(introduction));
+							f.getName().contains(introduction));
 				}
 				return builder.build();
 			})//
-				.collect(Collectors.toList());
+					.collect(Collectors.toList());
 		};
 		this.s3UploadHandler = (file, messageHeaders) -> {
 			var contentType = (String) messageHeaders.get(Headers.CONTENT_TYPE);
 			var manifest = (UploadPackageManifest) messageHeaders
-				.get(Headers.PACKAGE_MANIFEST);
+					.get(Headers.PACKAGE_MANIFEST);
 			var s3Path = s3.upload(contentType, manifest.getUid(), file);
 			return MessageBuilder.withPayload(file) //
-				.setHeader(Headers.S3_PATH, s3Path) //
-				.build();
+					.setHeader(Headers.S3_PATH, s3Path) //
+					.build();
 		};
 		this.aggregator = spec -> spec.outputProcessor(group -> {
 			var messages = group.getMessages();
@@ -214,11 +214,11 @@ class S3FlowConfiguration {
 			var request = new HashMap<String, String>();
 			for (var msg : messages) {
 				establishHeaderIfMatches(request, msg, Headers.IS_INTRODUCTION_FILE,
-					Headers.PROCESSOR_REQUEST_INTRODUCTION);
+						Headers.PROCESSOR_REQUEST_INTRODUCTION);
 				establishHeaderIfMatches(request, msg, Headers.IS_INTERVIEW_FILE,
-					Headers.PROCESSOR_REQUEST_INTERVIEW);
+						Headers.PROCESSOR_REQUEST_INTERVIEW);
 				var manifest = (UploadPackageManifest) msg.getHeaders()
-					.get(Headers.PACKAGE_MANIFEST);
+						.get(Headers.PACKAGE_MANIFEST);
 				uid = Objects.requireNonNull(manifest).getUid();
 			}
 			request.put("uid", uid);
@@ -227,9 +227,8 @@ class S3FlowConfiguration {
 
 	}
 
-
 	private void establishHeaderIfMatches(HashMap<String, String> request, Message<?> msg,
-																																							String header, String newKey) {
+			String header, String newKey) {
 		if (isTrue(msg.getHeaders(), header)) {
 			request.put(newKey, (String) msg.getHeaders().get(Headers.S3_PATH));
 		}
@@ -257,30 +256,32 @@ class S3FlowConfiguration {
 	}
 
 	@Bean
-	IntegrationFlow audioProcessorPreparationPipeline(RabbitHelper helper, AmqpTemplate template) {
+	IntegrationFlow audioProcessorPreparationPipeline(RabbitHelper helper,
+			AmqpTemplate template) {
 
 		var processorConfig = properties.getProcessor();
-		helper.defineDestination(processorConfig.getRequestsExchange(), processorConfig.getRequestsQueue(), processorConfig.getRequestsRoutingKey());
+		helper.defineDestination(processorConfig.getRequestsExchange(),
+				processorConfig.getRequestsQueue(),
+				processorConfig.getRequestsRoutingKey());
 
-		var processorOutboundAdapter = Amqp
-			.outboundAdapter(template)
-			.exchangeName(processorConfig.getRequestsExchange())
-			.routingKey(processorConfig.getRequestsRoutingKey());
+		var processorOutboundAdapter = Amqp.outboundAdapter(template)
+				.exchangeName(processorConfig.getRequestsExchange())
+				.routingKey(processorConfig.getRequestsRoutingKey());
 
 		return IntegrationFlows//
-			.from(this.channels.apiToPipelineChannel()) //
-			.split(File.class, this.unzipSplitter) //
-			.handle(File.class, this.s3UploadHandler) //
-			.aggregate(this.aggregator)//
-			.handle(Map.class, (payload, headers) ->
-				MessageBuilder
-					.withPayload(payload)
-					.setHeader(Headers.UID, payload.get(Headers.UID))
-					.setHeader(Headers.PROCESSOR_REQUEST_INTERVIEW, payload.get(Headers.PROCESSOR_REQUEST_INTERVIEW))
-					.setHeader(Headers.PROCESSOR_REQUEST_INTRODUCTION, payload.get(Headers.PROCESSOR_REQUEST_INTRODUCTION))
-			)
-			.handle(processorOutboundAdapter)
-			.get();
+				.from(this.channels.apiToPipelineChannel()) //
+				.split(File.class, this.unzipSplitter) //
+				.handle(File.class, this.s3UploadHandler) //
+				.aggregate(this.aggregator)//
+				.handle(Map.class,
+						(payload, headers) -> MessageBuilder.withPayload(payload)
+								.setHeader(Headers.UID, payload.get(Headers.UID))
+								.setHeader(Headers.PROCESSOR_REQUEST_INTERVIEW,
+										payload.get(Headers.PROCESSOR_REQUEST_INTERVIEW))
+								.setHeader(Headers.PROCESSOR_REQUEST_INTRODUCTION,
+										payload.get(
+												Headers.PROCESSOR_REQUEST_INTRODUCTION)))
+				.handle(processorOutboundAdapter).get();
 	}
 
 }
@@ -299,11 +300,11 @@ class Demo {
 	@EventListener(ApplicationReadyEvent.class)
 	public void go() {
 		var msg = MessageBuilder
-			.withPayload("/Users/joshlong/Desktop/sample-package.zip".trim())//
-			.setHeader(Headers.PACKAGE_ID, UUID.randomUUID().toString())//
-			.build();
+				.withPayload("/Users/joshlong/Desktop/sample-package.zip".trim())//
+				.setHeader(Headers.PACKAGE_ID, UUID.randomUUID().toString())//
+				.build();
 		Assert.isTrue(this.pipeline.send(msg),
-			"the production process should have been started by now.");
+				"the production process should have been started by now.");
 	}
 
 }
@@ -317,7 +318,7 @@ abstract class FileUtils {
 
 	static File ensureDirectoryExists(File f) {
 		Assert.isTrue(f.exists() || f.mkdirs(),
-			"the file " + f.getAbsolutePath() + " does not exist");
+				"the file " + f.getAbsolutePath() + " does not exist");
 		return f;
 	}
 
@@ -338,12 +339,12 @@ class PackageUploadController {
 
 	@PostMapping("/production")
 	ResponseEntity<?> beginProduction(@RequestParam("id") String id,
-																																			@RequestParam("file") MultipartFile file) throws Exception {
+			@RequestParam("file") MultipartFile file) throws Exception {
 		var newFile = new File(this.file, id);
 		file.transferTo(newFile);
 		FileUtils.assertFileExists(newFile);
 		var msg = MessageBuilder.withPayload(newFile).setHeader(Headers.PACKAGE_ID, id)
-			.build();
+				.build();
 		this.apiToPipelineChannel.send(msg);
 		return ResponseEntity.accepted().body(Map.of("status", "OK"));
 	}
