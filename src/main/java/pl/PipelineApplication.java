@@ -2,6 +2,7 @@ package pl;
 
 import lombok.*;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.ResponseEntity;
+import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.AggregatorSpec;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
@@ -158,6 +160,7 @@ class S3FlowConfiguration {
 	private final Function<File, Collection<Message<File>>> unzipSplitter;
 
 	private final GenericHandler<File> s3UploadHandler;
+
 	private final Consumer<AggregatorSpec> aggregator;
 
 	S3FlowConfiguration(PipelineProperties properties, AwsS3Service s3,
@@ -210,9 +213,12 @@ class S3FlowConfiguration {
 			var uid = (String) null;
 			var request = new HashMap<String, String>();
 			for (var msg : messages) {
-				establishHeaderIfMatches(request, msg, Headers.IS_INTRODUCTION_FILE, "introduction-file");
-				establishHeaderIfMatches(request, msg, Headers.IS_INTERVIEW_FILE, "interview-file");
-				var manifest = (UploadPackageManifest) msg.getHeaders().get(Headers.PACKAGE_MANIFEST);
+				establishHeaderIfMatches(request, msg, Headers.IS_INTRODUCTION_FILE,
+					Headers.PROCESSOR_REQUEST_INTRODUCTION);
+				establishHeaderIfMatches(request, msg, Headers.IS_INTERVIEW_FILE,
+					Headers.PROCESSOR_REQUEST_INTERVIEW);
+				var manifest = (UploadPackageManifest) msg.getHeaders()
+					.get(Headers.PACKAGE_MANIFEST);
 				uid = Objects.requireNonNull(manifest).getUid();
 			}
 			request.put("uid", uid);
@@ -221,7 +227,9 @@ class S3FlowConfiguration {
 
 	}
 
-	private void establishHeaderIfMatches(HashMap<String, String> request, Message<?> msg, String header, String newKey) {
+
+	private void establishHeaderIfMatches(HashMap<String, String> request, Message<?> msg,
+																																							String header, String newKey) {
 		if (isTrue(msg.getHeaders(), header)) {
 			request.put(newKey, (String) msg.getHeaders().get(Headers.S3_PATH));
 		}
@@ -245,19 +253,33 @@ class S3FlowConfiguration {
 	}
 
 	private boolean isTrue(MessageHeaders headers, String header) {
-		var b = (boolean) headers.get(header);
-		return b;
+		return (boolean) headers.get(header);
 	}
 
 	@Bean
-	IntegrationFlow audioProcessorPreparationPipeline() {
+	IntegrationFlow audioProcessorPreparationPipeline(RabbitHelper helper, AmqpTemplate template) {
+
+		var processorConfig = properties.getProcessor();
+		helper.defineDestination(processorConfig.getRequestsExchange(), processorConfig.getRequestsQueue(), processorConfig.getRequestsRoutingKey());
+
+		var processorOutboundAdapter = Amqp
+			.outboundAdapter(template)
+			.exchangeName(processorConfig.getRequestsExchange())
+			.routingKey(processorConfig.getRequestsRoutingKey());
 
 		return IntegrationFlows//
 			.from(this.channels.apiToPipelineChannel()) //
 			.split(File.class, this.unzipSplitter) //
 			.handle(File.class, this.s3UploadHandler) //
 			.aggregate(this.aggregator)//
-			.handle((o, messageHeaders) -> o)
+			.handle(Map.class, (payload, headers) ->
+				MessageBuilder
+					.withPayload(payload)
+					.setHeader(Headers.UID, payload.get(Headers.UID))
+					.setHeader(Headers.PROCESSOR_REQUEST_INTERVIEW, payload.get(Headers.PROCESSOR_REQUEST_INTERVIEW))
+					.setHeader(Headers.PROCESSOR_REQUEST_INTRODUCTION, payload.get(Headers.PROCESSOR_REQUEST_INTRODUCTION))
+			)
+			.handle(processorOutboundAdapter)
 			.get();
 	}
 
