@@ -125,7 +125,7 @@ class UploadPackageManifest {
 		var build = new UploadPackageManifest();
 		var podcast = doc.getElementsByTagName("podcast");
 		Assert.isTrue(podcast.getLength() > 0,
-			"there must be at least one podcast element in a manifest");
+				"there must be at least one podcast element in a manifest");
 		var attributes = podcast.item(0).getAttributes();
 		build.setDescription(readAttributeFrom("description", attributes));
 		build.setUid(readAttributeFrom("uid", attributes));
@@ -160,38 +160,36 @@ class S3FlowConfiguration {
 	private final GenericHandler<File> s3UploadHandler;
 
 	S3FlowConfiguration(PipelineProperties properties, AwsS3Service s3,
-																					ChannelsConfiguration channels) {
+			ChannelsConfiguration channels) {
 		this.properties = properties;
 		this.s3 = s3;
 		this.channels = channels;
 		this.unzipSplitter = (file) -> {
 			var dest = new File(properties.getS3().getStagingDirectory(),
-				UUID.randomUUID().toString());
+					UUID.randomUUID().toString());
 			var files = Unzipper.unzip(file, dest);
 			var manifest = files.stream()
-				.filter(fn -> fn.getName().toLowerCase().endsWith("manifest.xml"))
-				.collect(Collectors.toList());
+					.filter(fn -> fn.getName().toLowerCase().endsWith("manifest.xml"))
+					.collect(Collectors.toList());
 			Assert.isTrue(manifest.size() > 0,
-				"at least one file must be a manifest.xml file for a package to be considered valid.");
+					"at least one file must be a manifest.xml file for a package to be considered valid.");
 			var manifestFile = manifest.iterator().next();
 			Assert.notNull(manifest, "the manifest must not be null");
 			var upm = UploadPackageManifest.from(manifestFile);
-			return files.stream()
-				.map(f -> MessageBuilder//
+			return files.stream().map(f -> MessageBuilder//
 					.withPayload(f)//
 					.setHeader(Headers.CONTENT_TYPE, determineContentTypeFor(f))//
 					.setHeader(Headers.PACKAGE_MANIFEST, upm)//
-					.build())
-				.collect(Collectors.toList());
+					.build()).collect(Collectors.toList());
 		};
 		this.s3UploadHandler = (file, messageHeaders) -> {
 			var contentType = determineContentTypeFor(file);
-			var manifest = (UploadPackageManifest) messageHeaders.get(Headers.PACKAGE_MANIFEST);
+			var manifest = (UploadPackageManifest) messageHeaders
+					.get(Headers.PACKAGE_MANIFEST);
 			var s3Path = s3.upload(contentType, manifest.getUid(), file);
-			return MessageBuilder
-				.withPayload(file) //
-				.setHeader(Headers.S3_PATH, s3Path) //
-				.build();
+			return MessageBuilder.withPayload(file) //
+					.setHeader(Headers.S3_PATH, s3Path) //
+					.build();
 		};
 	}
 
@@ -213,15 +211,15 @@ class S3FlowConfiguration {
 	@Bean
 	IntegrationFlow unzipPipeline() {
 		return IntegrationFlows//
-			.from(this.channels.apiToPipelineChannel()) //
-			.split(File.class, this.unzipSplitter) //
-			.handle(File.class, this.s3UploadHandler) //
-			.handle(File.class, (file, messageHeaders) -> {
-				log.info("----------------------------------");
-				log.info("payload:  " + file.getAbsolutePath());
-				messageHeaders.forEach((k, v) -> log.info(k + '=' + v));
-				return null;
-			}).get();
+				.from(this.channels.apiToPipelineChannel()) //
+				.split(File.class, this.unzipSplitter) //
+				.handle(File.class, this.s3UploadHandler) //
+				.handle(File.class, (file, messageHeaders) -> {
+					log.info("----------------------------------");
+					log.info("payload:  " + file.getAbsolutePath());
+					messageHeaders.forEach((k, v) -> log.info(k + '=' + v));
+					return null;
+				}).get();
 	}
 
 }
@@ -240,11 +238,11 @@ class Demo {
 	@EventListener(ApplicationReadyEvent.class)
 	public void go() {
 		var msg = MessageBuilder
-			.withPayload("/Users/joshlong/Desktop/sample-package.zip".trim())//
-			.setHeader(Headers.PACKAGE_ID, UUID.randomUUID().toString())//
-			.build();
+				.withPayload("/Users/joshlong/Desktop/sample-package.zip".trim())//
+				.setHeader(Headers.PACKAGE_ID, UUID.randomUUID().toString())//
+				.build();
 		Assert.isTrue(this.pipeline.send(msg),
-			"the production process should have been started by now.");
+				"the production process should have been started by now.");
 	}
 
 }
@@ -258,7 +256,7 @@ abstract class FileUtils {
 
 	static File ensureDirectoryExists(File f) {
 		Assert.isTrue(f.exists() || f.mkdirs(),
-			"the file " + f.getAbsolutePath() + " does not exist");
+				"the file " + f.getAbsolutePath() + " does not exist");
 		return f;
 	}
 
@@ -279,12 +277,12 @@ class PackageUploadController {
 
 	@PostMapping("/production")
 	ResponseEntity<?> beginProduction(@RequestParam("id") String id,
-																																			@RequestParam("file") MultipartFile file) throws Exception {
+			@RequestParam("file") MultipartFile file) throws Exception {
 		var newFile = new File(this.file, id);
 		file.transferTo(newFile);
 		FileUtils.assertFileExists(newFile);
 		var msg = MessageBuilder.withPayload(newFile).setHeader(Headers.PACKAGE_ID, id)
-			.build();
+				.build();
 		this.apiToPipelineChannel.send(msg);
 		return ResponseEntity.accepted().body(Map.of("status", "OK"));
 	}

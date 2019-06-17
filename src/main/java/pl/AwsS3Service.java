@@ -28,16 +28,16 @@ class AwsS3Service {
 			objectMetadata.setContentType(contentType);
 			objectMetadata.setContentLength(file.length());
 			try (var inputStream = new BufferedInputStream(new FileInputStream(file))) {
-				var request = new PutObjectRequest(
-					this.bucketName + (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder),
-					file.getName(),
-					inputStream,
-					objectMetadata);
+				var request = new PutObjectRequest(this.bucketName
+						+ (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder),
+						file.getName(), inputStream, objectMetadata);
 				PutObjectResult putObjectResult = this.s3.putObject(request);
 				Assert.notNull(putObjectResult, "the S3 file hasn't been uploaded");
-				return "s3://" + this.bucketName + "/" + nestedBucketFolder + "/" + file.getName();
+				return "s3://" + this.bucketName + "/" + nestedBucketFolder + "/"
+						+ file.getName();
 			}
 		}
 		return null;
 	}
+
 }
