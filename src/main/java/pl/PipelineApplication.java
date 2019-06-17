@@ -10,12 +10,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.ResponseEntity;
+import org.springframework.integration.dsl.AggregatorSpec;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.integration.handler.GenericHandler;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -29,10 +31,8 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,6 +43,7 @@ public class PipelineApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(PipelineApplication.class, args);
 	}
+
 }
 
 @Configuration
@@ -52,6 +53,7 @@ class ChannelsConfiguration {
 	MessageChannel apiToPipelineChannel() {
 		return MessageChannels.direct().get();
 	}
+
 }
 
 @Data
@@ -74,7 +76,7 @@ class UploadPackageManifest {
 	@AllArgsConstructor
 	@NoArgsConstructor
 	@Builder
-	private static class Media {
+	public static class Media {
 
 		private String interview, introduction, extension;
 
@@ -110,7 +112,7 @@ class UploadPackageManifest {
 		var first = nodeList.item(0);
 		var attributes = first.getAttributes();
 		var interview = readAttributeFrom("interview", attributes);
-		var intro = readAttributeFrom("introduction", attributes);
+		var intro = readAttributeFrom("intro", attributes);
 		return new Media(interview, intro, ext);
 	}
 
@@ -140,6 +142,7 @@ class UploadPackageManifest {
 	private static Media getMediaFromDoc(Document doc, String mp3Ext) {
 		return readMedia(doc.getElementsByTagName(mp3Ext), mp3Ext);
 	}
+
 }
 
 @Log4j2
@@ -155,6 +158,9 @@ class S3FlowConfiguration {
 	private final Function<File, Collection<Message<File>>> unzipSplitter;
 
 	private final GenericHandler<File> s3UploadHandler;
+
+	static final String FILE_ROLE_INTERVIEW = "interview";
+	static final String FILE_ROLE_INTRODUCTION = "introduction";
 
 	S3FlowConfiguration(PipelineProperties properties, AwsS3Service s3,
 																					ChannelsConfiguration channels) {
@@ -173,11 +179,25 @@ class S3FlowConfiguration {
 			var manifestFile = manifest.iterator().next();
 			Assert.notNull(manifest, "the manifest must not be null");
 			var upm = UploadPackageManifest.from(manifestFile);
-			return files.stream().map(f -> MessageBuilder//
-				.withPayload(f)//
-				.setHeader(Headers.CONTENT_TYPE, determineContentTypeFor(f))//
-				.setHeader(Headers.PACKAGE_MANIFEST, upm)//
-				.build()).collect(Collectors.toList());
+
+			return files.stream().map(f -> {
+				var builder = MessageBuilder//
+					.withPayload(f)//
+					.setHeader(Headers.CONTENT_TYPE, determineContentTypeFor(f))//
+					.setHeader(Headers.PACKAGE_MANIFEST, upm);
+
+
+				for (var media : upm.getMedia()) {
+					var interview = media.getInterview();
+					var introduction = media.getIntroduction();
+					builder.setHeader(Headers.IS_INTERVIEW_FILE, f.getName().contains(interview));
+					builder.setHeader(Headers.IS_INTRODUCTION_FILE, f.getName().contains(introduction));
+				}
+
+				return builder//
+					.build();
+			})//
+				.collect(Collectors.toList());
 		};
 		this.s3UploadHandler = (file, messageHeaders) -> {
 			var contentType = (String) messageHeaders.get(Headers.CONTENT_TYPE);
@@ -205,19 +225,58 @@ class S3FlowConfiguration {
 		throw new RuntimeException("Invalid file-type!");
 	}
 
+	@Data
+	@Builder
+	@AllArgsConstructor
+	@NoArgsConstructor
+	public static class ProcessorManifest {
+		private String introductionS3Path;
+		private String interviewS3Path;
+		private String uid;
+	}
+
+	private boolean isTrue(MessageHeaders headers, String header) {
+		var b = (boolean) headers.get(header);
+		return b;
+	}
+
 	@Bean
 	IntegrationFlow audioProcessorPreparationPipeline() {
-		GenericHandler<File> loggingHandler = (file, messageHeaders) -> {
-			log.info("----------------------------------");
-			log.info("payload:  " + file.getAbsolutePath());
-			messageHeaders.forEach((k, v) -> log.info(k + '=' + v));
-			return null;
-		};
+
+		Consumer<AggregatorSpec> aggregator = spec ->
+			spec
+				.outputProcessor(group -> {
+
+					var messages = group.getMessages();
+					var upm = (String) null;
+					var request = new HashMap<String, String>();
+					for (Message<?> msg : messages) {
+						if (isTrue(msg.getHeaders(), Headers.IS_INTRODUCTION_FILE)) {
+							request.put("introduction-file", (String) msg.getHeaders().get(Headers.S3_PATH));
+						}
+						if (isTrue(msg.getHeaders(), Headers.IS_INTERVIEW_FILE)) {
+							request.put("interview-file", (String) msg.getHeaders().get(Headers.S3_PATH));
+						}
+						upm = request.get(Headers.PACKAGE_MANIFEST);
+					}
+					request.put("uid", upm);
+					return request;
+
+				});
+
 		return IntegrationFlows//
 			.from(this.channels.apiToPipelineChannel()) //
 			.split(File.class, this.unzipSplitter) //
 			.handle(File.class, this.s3UploadHandler) //
-			.handle(File.class, loggingHandler)//
+			.aggregate(aggregator)
+			.handle(new GenericHandler<Object>() {
+				@Override
+				public Object handle(Object o, MessageHeaders messageHeaders) {
+					log.info("after the release:  ");
+					return null;
+				}
+			})
+//			.handle(File.class, loggingHandler)//
 			.get();
 	}
 
