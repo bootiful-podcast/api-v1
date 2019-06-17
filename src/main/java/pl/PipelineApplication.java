@@ -183,7 +183,7 @@ class S3FlowConfiguration {
 					.build()).collect(Collectors.toList());
 		};
 		this.s3UploadHandler = (file, messageHeaders) -> {
-			var contentType = determineContentTypeFor(file);
+			var contentType = (String) messageHeaders.get(Headers.CONTENT_TYPE);
 			var manifest = (UploadPackageManifest) messageHeaders
 					.get(Headers.PACKAGE_MANIFEST);
 			var s3Path = s3.upload(contentType, manifest.getUid(), file);
