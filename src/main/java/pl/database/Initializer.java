@@ -1,4 +1,4 @@
-package integration.db;
+package pl.database;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -9,8 +9,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 
+//TODO
 @Log4j2
-@Component
+@Deprecated
 @RequiredArgsConstructor
 class Initializer {
 

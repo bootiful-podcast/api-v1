@@ -11,3 +11,5 @@ using the Podcast shell. Here's the basic workflow.
 *   stores metadata about the podcast in the SQL database
 *   sends a message on RabbitMQ to the (Python-based) processor
 *   when the response comes from the processor, the resulting file is uploaded to whatever Podcast API we settle on
+*   when the response comes from the processor, the resulting files are recorded in the PostgreSQL database. This will in turn feed into the website's enumeration of new podcasts.
+

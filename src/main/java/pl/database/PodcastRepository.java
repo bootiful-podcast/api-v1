@@ -1,4 +1,4 @@
-package integration.db;
+package pl.database;
 
 import org.springframework.data.repository.CrudRepository;
 
