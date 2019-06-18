@@ -1,4 +1,4 @@
-package api;
+package pl;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -6,10 +6,10 @@ import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.MessageChannel;
 
 @Configuration
-class PackageProcessIntegrationChannels {
+class ChannelsConfiguration {
 
 	@Bean
-	MessageChannel productionChannel() {
+	MessageChannel apiToPipelineChannel() {
 		return MessageChannels.direct().get();
 	}
 

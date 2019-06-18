@@ -16,10 +16,6 @@ class Unzipper {
 
 	public static Collection<File> unzip(File zipfile, File targetDirectory) {
 		var list = new ArrayList<File>();
-		// var localRoot = new File(this.root, UUID.randomUUID().toString());
-		Assert.isTrue(targetDirectory.exists() || targetDirectory.mkdirs(),
-				"The " + targetDirectory.getAbsolutePath()
-						+ " does not exist and couldn't be created");
 		unzip(zipfile, targetDirectory, list);
 		return list;
 	}

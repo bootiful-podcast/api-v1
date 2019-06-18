@@ -13,7 +13,7 @@ import java.util.List;
 @Log4j2
 @Deprecated
 @RequiredArgsConstructor
-class Initializer {
+class Demo {
 
 	private final PodcastRepository repository;
 
