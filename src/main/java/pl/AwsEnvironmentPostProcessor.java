@@ -14,9 +14,10 @@ import java.util.Properties;
 import java.util.function.Function;
 
 /**
-	* Registers the configuration values in {@code $HOME/.aws/credentials} and {@code $HOME/.aws/config}
-	* as keys in the Spring {@link org.springframework.core.env.Environment}.
-	*/
+ * Registers the configuration values in {@code $HOME/.aws/credentials} and
+ * {@code $HOME/.aws/config} as keys in the Spring
+ * {@link org.springframework.core.env.Environment}.
+ */
 @Log4j2
 class AwsEnvironmentPostProcessor implements EnvironmentPostProcessor {
 

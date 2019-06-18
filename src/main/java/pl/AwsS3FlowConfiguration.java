@@ -27,7 +27,9 @@ import java.util.stream.Collectors;
 class AwsS3FlowConfiguration {
 
 	private final PipelineProperties properties;
+
 	private final ObjectMapper objectMapper;
+
 	private final ChannelsConfiguration channels;
 
 	private final Function<File, Collection<Message<File>>> unzipSplitter;
@@ -36,41 +38,41 @@ class AwsS3FlowConfiguration {
 
 	private final Consumer<AggregatorSpec> aggregator;
 
-	AwsS3FlowConfiguration(PipelineProperties properties, ObjectMapper om, AwsS3Service s3,
-																								ChannelsConfiguration channels) {
+	AwsS3FlowConfiguration(PipelineProperties properties, ObjectMapper om,
+			AwsS3Service s3, ChannelsConfiguration channels) {
 		this.properties = properties;
 		this.channels = channels;
 		this.objectMapper = om;
 		this.unzipSplitter = (file) -> {
 			var stagingDirectoryForRequest = FileUtils.ensureDirectoryExists(
-				new File(properties.getS3().getStagingDirectory(),
-					UUID.randomUUID().toString()));
+					new File(properties.getS3().getStagingDirectory(),
+							UUID.randomUUID().toString()));
 
 			var files = Unzipper.unzip(file, stagingDirectoryForRequest);
 			var manifest = files.stream()
-				.filter(fn -> fn.getName().toLowerCase().endsWith("manifest.xml"))
-				.collect(Collectors.toList());
+					.filter(fn -> fn.getName().toLowerCase().endsWith("manifest.xml"))
+					.collect(Collectors.toList());
 			Assert.isTrue(manifest.size() > 0,
-				"at least one file must be a manifest.xml file for a package to be considered valid.");
+					"at least one file must be a manifest.xml file for a package to be considered valid.");
 			var manifestFile = manifest.iterator().next();
 			Assert.notNull(manifest, "the manifest must not be null");
 			var uploadPackageManifest = UploadPackageManifest.from(manifestFile);
 
 			var stream = files.stream().map(f -> {
 				var builder = MessageBuilder//
-					.withPayload(f)//
-					.setHeader(Headers.CONTENT_TYPE, determineContentTypeFor(f))//
-					.setHeader(Headers.PACKAGE_MANIFEST, uploadPackageManifest);
+						.withPayload(f)//
+						.setHeader(Headers.CONTENT_TYPE, determineContentTypeFor(f))//
+						.setHeader(Headers.PACKAGE_MANIFEST, uploadPackageManifest);
 
-				uploadPackageManifest
-					.getMedia()
-					.forEach(media -> {
-						var mediaMap = Map.of( //
-							Headers.IS_INTERVIEW_FILE, f.getName().contains(media.getInterview()), //
-							Headers.IS_INTRODUCTION_FILE, f.getName().contains(media.getIntroduction()) //
-						);
-						mediaMap.forEach(builder::setHeader);
-					});
+				uploadPackageManifest.getMedia().forEach(media -> {
+					var mediaMap = Map.of( //
+							Headers.IS_INTERVIEW_FILE,
+							f.getName().contains(media.getInterview()), //
+							Headers.IS_INTRODUCTION_FILE,
+							f.getName().contains(media.getIntroduction()) //
+					);
+					mediaMap.forEach(builder::setHeader);
+				});
 				return builder.build();
 			});
 
@@ -79,23 +81,23 @@ class AwsS3FlowConfiguration {
 		this.s3UploadHandler = (file, messageHeaders) -> {
 			var contentType = messageHeaders.get(Headers.CONTENT_TYPE, String.class);
 			var manifest = messageHeaders.get(Headers.PACKAGE_MANIFEST,
-				UploadPackageManifest.class);
+					UploadPackageManifest.class);
 			var s3Path = s3.upload(contentType, manifest.getUid(), file);
 			return MessageBuilder //
-				.withPayload(file) //
-				.setHeader(Headers.S3_PATH, s3Path) //
-				.build();
+					.withPayload(file) //
+					.setHeader(Headers.S3_PATH, s3Path) //
+					.build();
 		};
 		this.aggregator = spec -> spec.outputProcessor(group -> {
 			var messages = group.getMessages();
 			var request = new HashMap<String, String>();
 			messages.forEach(msg -> {
 				establishHeaderIfMatches(request, msg, Headers.IS_INTRODUCTION_FILE,
-					Headers.PROCESSOR_REQUEST_INTRODUCTION);
+						Headers.PROCESSOR_REQUEST_INTRODUCTION);
 				establishHeaderIfMatches(request, msg, Headers.IS_INTERVIEW_FILE,
-					Headers.PROCESSOR_REQUEST_INTERVIEW);
+						Headers.PROCESSOR_REQUEST_INTERVIEW);
 				var manifest = msg.getHeaders().get(Headers.PACKAGE_MANIFEST,
-					UploadPackageManifest.class);
+						UploadPackageManifest.class);
 				var uid = Objects.requireNonNull(manifest).getUid();
 				request.put("uid", uid);
 			});
@@ -106,7 +108,7 @@ class AwsS3FlowConfiguration {
 	}
 
 	private void establishHeaderIfMatches(HashMap<String, String> request, Message<?> msg,
-																																							String header, String newKey) {
+			String header, String newKey) {
 		if (isTrue(msg.getHeaders(), header)) {
 			request.put(newKey, msg.getHeaders().get(Headers.S3_PATH, String.class));
 		}
@@ -135,26 +137,26 @@ class AwsS3FlowConfiguration {
 
 	@Bean
 	IntegrationFlow audioProcessorPreparationPipeline(RabbitHelper helper,
-																																																			AmqpTemplate template) {
+			AmqpTemplate template) {
 
 		var processorConfig = properties.getProcessor();
 		helper.defineDestination(processorConfig.getRequestsExchange(),
-			processorConfig.getRequestsQueue(),
-			processorConfig.getRequestsRoutingKey());
+				processorConfig.getRequestsQueue(),
+				processorConfig.getRequestsRoutingKey());
 
 		var processorOutboundAdapter = Amqp //
-			.outboundAdapter(template)//
-			.exchangeName(processorConfig.getRequestsExchange()) //
-			.routingKey(processorConfig.getRequestsRoutingKey());
+				.outboundAdapter(template)//
+				.exchangeName(processorConfig.getRequestsExchange()) //
+				.routingKey(processorConfig.getRequestsRoutingKey());
 
 		return IntegrationFlows//
-			.from(this.channels.apiToPipelineChannel()) //
-			.split(File.class, this.unzipSplitter) //
-			.handle(File.class, this.s3UploadHandler) //
-			.aggregate(this.aggregator)//
-			.handle(Map.class, this.transformer)//
-			.handle(processorOutboundAdapter)//
-			.get();
+				.from(this.channels.apiToPipelineChannel()) //
+				.split(File.class, this.unzipSplitter) //
+				.handle(File.class, this.s3UploadHandler) //
+				.aggregate(this.aggregator)//
+				.handle(Map.class, this.transformer)//
+				.handle(processorOutboundAdapter)//
+				.get();
 	}
 
 	private final GenericHandler<Map> transformer = new GenericHandler<>() {
@@ -163,14 +165,14 @@ class AwsS3FlowConfiguration {
 		@SneakyThrows
 		public Object handle(Map payload, MessageHeaders headers) {
 			var json = objectMapper.writeValueAsString(payload);
-			return MessageBuilder
-				.withPayload(json)
-				.setHeader(Headers.UID, payload.get(Headers.UID))
-				.setHeader(Headers.PROCESSOR_REQUEST_INTERVIEW, payload.get(Headers.PROCESSOR_REQUEST_INTERVIEW))
-				.setHeader(Headers.PROCESSOR_REQUEST_INTRODUCTION, payload.get(Headers.PROCESSOR_REQUEST_INTRODUCTION))
-				.build();
+			return MessageBuilder.withPayload(json)
+					.setHeader(Headers.UID, payload.get(Headers.UID))
+					.setHeader(Headers.PROCESSOR_REQUEST_INTERVIEW,
+							payload.get(Headers.PROCESSOR_REQUEST_INTERVIEW))
+					.setHeader(Headers.PROCESSOR_REQUEST_INTRODUCTION,
+							payload.get(Headers.PROCESSOR_REQUEST_INTRODUCTION))
+					.build();
 		}
 	};
-
 
 }

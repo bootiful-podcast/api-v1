@@ -12,7 +12,7 @@ import java.io.File;
 @Log4j2
 @AllArgsConstructor
 @NoArgsConstructor
- class PodcastIntegrationProperties {
+class PodcastIntegrationProperties {
 
 	private File inboundPodcastsDirectory;
 

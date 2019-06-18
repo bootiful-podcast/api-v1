@@ -15,7 +15,7 @@ class RabbitMqEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment,
-																																				SpringApplication application) {
+			SpringApplication application) {
 
 		var rmqAddress = System.getenv("RMQ_ADDRESS");
 		log.info("RMQ_ADDRESS: " + rmqAddress);
