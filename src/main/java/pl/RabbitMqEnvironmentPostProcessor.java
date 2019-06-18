@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
 class RabbitMqEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
 	@Override
-	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+	public void postProcessEnvironment(ConfigurableEnvironment environment,
+			SpringApplication application) {
 
 		var rmqAddress = System.getenv("RMQ_ADDRESS");
 		log.info("RMQ_ADDRESS: " + rmqAddress);
@@ -61,16 +62,14 @@ class RabbitMqEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
 			@Override
 			public Object getProperty(String name) {
-				var matchingKeys = map
-					.entrySet()
-					.stream()
-					.filter(entry -> name.equalsIgnoreCase("spring.rabbitmq." + entry.getKey()));
-				var toCollect = matchingKeys
-					.map(Map.Entry::getValue)
-					.collect(Collectors.toList());
+				var matchingKeys = map.entrySet().stream().filter(entry -> name
+						.equalsIgnoreCase("spring.rabbitmq." + entry.getKey()));
+				var toCollect = matchingKeys.map(Map.Entry::getValue)
+						.collect(Collectors.toList());
 				if (toCollect.size() > 0) {
 					var valueThatMatches = toCollect.iterator().next();
-					log.debug("for key '" + name + "' we found value '" + valueThatMatches + "'");
+					log.debug("for key '" + name + "' we found value '" + valueThatMatches
+							+ "'");
 					return valueThatMatches;
 				}
 				return null;
@@ -79,4 +78,5 @@ class RabbitMqEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
 		environment.getPropertySources().addLast(propertySource);
 	}
+
 }

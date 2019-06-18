@@ -10,7 +10,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.AggregatorSpec;
@@ -254,7 +253,7 @@ class S3FlowConfiguration {
 		return headers.get(header, Boolean.class);
 	}
 
-	//	@Bean
+	@Bean
 	IntegrationFlow audioProcessorPreparationPipeline(RabbitHelper helper,
 																																																			AmqpTemplate template) {
 
@@ -294,16 +293,16 @@ class Demo {
 
 	private final MessageChannel pipeline;
 
-	Demo(ChannelsConfiguration channelsConfiguration, Environment e) {
+	Demo(ChannelsConfiguration channelsConfiguration) {
 		this.pipeline = channelsConfiguration.apiToPipelineChannel();
-		log.info("the message is: 'hello..." + e.getProperty("hello") + "'!");
 	}
 
-	//@EventListener(ApplicationReadyEvent.class)
+	@EventListener(ApplicationReadyEvent.class)
 	public void go() {
+		var uuid = "222-3232fs-34dfkfsd-3dfsd";
 		var msg = MessageBuilder
 			.withPayload("/Users/joshlong/Desktop/sample-package.zip".trim())//
-			.setHeader(Headers.PACKAGE_ID, UUID.randomUUID().toString())//
+			.setHeader(Headers.PACKAGE_ID, uuid)//
 			.build();
 		Assert.isTrue(this.pipeline.send(msg),
 			"the production pipeline process couldn't be started.");
