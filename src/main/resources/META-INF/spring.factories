@@ -1,2 +1,2 @@
 org.springframework.boot.env.EnvironmentPostProcessor=pl.RabbitMqEnvironmentPostProcessor,\
-  pl.AwsEnvironmentPostProcessor
+  pl.aws.AwsEnvironmentPostProcessor

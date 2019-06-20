@@ -21,7 +21,9 @@ class Podcast {
 	@GeneratedValue
 	private Long id;
 
-	private String title, description, notes, transcript;
+	private String uid; // this is to support correlation later on
+
+	private String title, description, notes, transcript, productionArtifact;
 
 	private Date date = new Date();
 

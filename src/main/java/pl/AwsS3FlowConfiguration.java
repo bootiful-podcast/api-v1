@@ -1,9 +1,10 @@
 package pl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.SneakyThrows;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.amqp.dsl.Amqp;
@@ -15,6 +16,11 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
+import pl.aws.AwsS3Service;
+import pl.events.PodcastArchiveUploadedEvent;
+import pl.events.PodcastArtifactsUploadedToProcessorEvent;
+import pl.events.PodcastProcessedEvent;
 
 import java.io.File;
 import java.util.*;
@@ -28,7 +34,7 @@ class AwsS3FlowConfiguration {
 
 	private final PipelineProperties properties;
 
-	private final ObjectMapper objectMapper;
+	private final Json json;
 
 	private final ChannelsConfiguration channels;
 
@@ -38,11 +44,17 @@ class AwsS3FlowConfiguration {
 
 	private final Consumer<AggregatorSpec> aggregator;
 
-	AwsS3FlowConfiguration(PipelineProperties properties, ObjectMapper om,
-			AwsS3Service s3, ChannelsConfiguration channels) {
+	private final GenericHandler<Map> rmqProcessorAggregateArtifactsTransformer;
+
+	private final ApplicationEventPublisher publisher;
+
+	AwsS3FlowConfiguration(PipelineProperties properties, Json jsonService,
+			AwsS3Service s3, ChannelsConfiguration channels,
+			ApplicationEventPublisher publisher) {
 		this.properties = properties;
+		this.publisher = publisher;
 		this.channels = channels;
-		this.objectMapper = om;
+		this.json = jsonService;
 		this.unzipSplitter = (file) -> {
 			var stagingDirectoryForRequest = FileUtils.ensureDirectoryExists(
 					new File(properties.getS3().getStagingDirectory(),
@@ -54,10 +66,11 @@ class AwsS3FlowConfiguration {
 					.collect(Collectors.toList());
 			Assert.isTrue(manifest.size() > 0,
 					"at least one file must be a manifest.xml file for a package to be considered valid.");
-			var manifestFile = manifest.iterator().next();
+			var manifestFile = manifest.get(0);
 			Assert.notNull(manifest, "the manifest must not be null");
-			var uploadPackageManifest = UploadPackageManifest.from(manifestFile);
+			var uploadPackageManifest = PodcastPackageManifest.from(manifestFile);
 
+			recordUploadPackageManifest(uploadPackageManifest);
 			var stream = files.stream().map(f -> {
 				var builder = MessageBuilder//
 						.withPayload(f)//
@@ -65,6 +78,9 @@ class AwsS3FlowConfiguration {
 						.setHeader(Headers.PACKAGE_MANIFEST, uploadPackageManifest);
 
 				uploadPackageManifest.getMedia().forEach(media -> {
+
+					var interview = f.getName().contains(media.getInterview());
+					var intro = f.getName().contains(media.getIntroduction());
 					var mediaMap = Map.of( //
 							Headers.IS_INTERVIEW_FILE,
 							f.getName().contains(media.getInterview()), //
@@ -72,6 +88,11 @@ class AwsS3FlowConfiguration {
 							f.getName().contains(media.getIntroduction()) //
 					);
 					mediaMap.forEach(builder::setHeader);
+					var type = interview ? MediaTypes.TYPE_INTERVIEW
+							: (intro ? MediaTypes.TYPE_INTRODUCTION : null);
+					if (StringUtils.hasText(type)) {
+						builder.setHeader(Headers.ASSET_TYPE, type);
+					}
 				});
 				return builder.build();
 			});
@@ -81,8 +102,12 @@ class AwsS3FlowConfiguration {
 		this.s3UploadHandler = (file, messageHeaders) -> {
 			var contentType = messageHeaders.get(Headers.CONTENT_TYPE, String.class);
 			var manifest = messageHeaders.get(Headers.PACKAGE_MANIFEST,
-					UploadPackageManifest.class);
-			var s3Path = s3.upload(contentType, manifest.getUid(), file);
+					PodcastPackageManifest.class);
+			var uid = manifest.getUid();
+			var s3Path = s3.upload(contentType, uid, file);
+			var role = messageHeaders.get(Headers.ASSET_TYPE, String.class);
+			publisher.publishEvent(
+					new PodcastArtifactsUploadedToProcessorEvent(uid, role, s3Path));
 			return MessageBuilder //
 					.withPayload(file) //
 					.setHeader(Headers.S3_PATH, s3Path) //
@@ -97,13 +122,23 @@ class AwsS3FlowConfiguration {
 				establishHeaderIfMatches(request, msg, Headers.IS_INTERVIEW_FILE,
 						Headers.PROCESSOR_REQUEST_INTERVIEW);
 				var manifest = msg.getHeaders().get(Headers.PACKAGE_MANIFEST,
-						UploadPackageManifest.class);
+						PodcastPackageManifest.class);
 				var uid = Objects.requireNonNull(manifest).getUid();
 				request.put("uid", uid);
 			});
-
 			return request;
 		});
+		this.rmqProcessorAggregateArtifactsTransformer = (payload, headers) -> {
+			var json = jsonService.toJson(payload);
+			return MessageBuilder //
+					.withPayload(json) //
+					.setHeader(Headers.UID, payload.get(Headers.UID)) //
+					.setHeader(Headers.PROCESSOR_REQUEST_INTERVIEW,
+							payload.get(Headers.PROCESSOR_REQUEST_INTERVIEW)) //
+					.setHeader(Headers.PROCESSOR_REQUEST_INTRODUCTION,
+							payload.get(Headers.PROCESSOR_REQUEST_INTRODUCTION)) //
+					.build();
+		};
 
 	}
 
@@ -114,7 +149,7 @@ class AwsS3FlowConfiguration {
 		}
 	}
 	// todo there's got to be a better way to do this.
-	// todo wasn't there a transformer thing in Java itself?
+	// todo wasn't there a rmqProcessorAggregateArtifactsTransformer thing in Java itself?
 
 	private static String determineContentTypeFor(File file) {
 		Assert.notNull(file, "the file must not be null");
@@ -136,6 +171,33 @@ class AwsS3FlowConfiguration {
 	}
 
 	@Bean
+	IntegrationFlow audioProcessorReplyPipeline(ConnectionFactory connectionFactory) {
+		var amqpInboundAdapter = Amqp.inboundAdapter(connectionFactory,
+				properties.getProcessor().getRepliesQueue()).get();
+		return IntegrationFlows.from(amqpInboundAdapter)
+				.handle(String.class, (payload, headers) -> {
+					var resultMap = json.fromJson(payload,
+							new TypeReference<Map<String, String>>() {
+							});
+					var output = resultMap.getOrDefault("mp3",
+							resultMap.getOrDefault("wav", null));
+					recordProcessedFilesToDatabase(resultMap.get("uid"),
+							resultMap.get("output-bucket-name"), output);
+					return null;
+				}).get();
+	}
+
+	private void recordUploadPackageManifest(PodcastPackageManifest packageManifest) {
+		this.publisher.publishEvent(new PodcastArchiveUploadedEvent(packageManifest));
+	}
+
+	private void recordProcessedFilesToDatabase(String uid, String outputBucketName,
+			String fileName) {
+		this.publisher
+				.publishEvent(new PodcastProcessedEvent(uid, outputBucketName, fileName));
+	}
+
+	@Bean
 	IntegrationFlow audioProcessorPreparationPipeline(RabbitHelper helper,
 			AmqpTemplate template) {
 
@@ -154,25 +216,9 @@ class AwsS3FlowConfiguration {
 				.split(File.class, this.unzipSplitter) //
 				.handle(File.class, this.s3UploadHandler) //
 				.aggregate(this.aggregator)//
-				.handle(Map.class, this.transformer)//
+				.handle(Map.class, this.rmqProcessorAggregateArtifactsTransformer)//
 				.handle(processorOutboundAdapter)//
 				.get();
 	}
-
-	private final GenericHandler<Map> transformer = new GenericHandler<>() {
-
-		@Override
-		@SneakyThrows
-		public Object handle(Map payload, MessageHeaders headers) {
-			var json = objectMapper.writeValueAsString(payload);
-			return MessageBuilder.withPayload(json)
-					.setHeader(Headers.UID, payload.get(Headers.UID))
-					.setHeader(Headers.PROCESSOR_REQUEST_INTERVIEW,
-							payload.get(Headers.PROCESSOR_REQUEST_INTERVIEW))
-					.setHeader(Headers.PROCESSOR_REQUEST_INTRODUCTION,
-							payload.get(Headers.PROCESSOR_REQUEST_INTRODUCTION))
-					.build();
-		}
-	};
 
 }

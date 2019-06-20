@@ -45,10 +45,13 @@ class RabbitMqEnvironmentPostProcessor implements EnvironmentPostProcessor {
 		}
 
 		if (StringUtils.hasText(vhost)) {
-			if (vhost.startsWith("/")) {
-				vhost = vhost.substring(1);
+			vhost = vhost.trim();
+			if (!vhost.equalsIgnoreCase("/")) {
+				if (vhost.startsWith("/")) {
+					vhost = vhost.substring(1);
+				}
+				map.put("virtual-host", vhost);
 			}
-			map.put("virtual-host", vhost);
 		}
 
 		if (StringUtils.hasText(pw)) {

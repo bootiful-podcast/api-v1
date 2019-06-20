@@ -1,4 +1,4 @@
-package pl.database;
+package pl;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

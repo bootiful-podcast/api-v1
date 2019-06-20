@@ -2,8 +2,7 @@ package pl;
 
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,22 +17,21 @@ class PackageUploadController {
 
 	private final File file;
 
-	private final MessageChannel apiToPipelineChannel;
+	private final PipelineService service;
 
-	PackageUploadController(PipelineProperties props, ChannelsConfiguration channels) {
+	PackageUploadController(PipelineProperties props, PipelineService service) {
 		this.file = FileUtils.ensureDirectoryExists(props.getS3().getStagingDirectory());
-		this.apiToPipelineChannel = channels.apiToPipelineChannel();
+		this.service = service;
 	}
 
 	@PostMapping("/production")
-	ResponseEntity<?> beginProduction(@RequestParam("id") String id,
+	ResponseEntity<?> beginProduction(@RequestParam("uid") String uid,
 			@RequestParam("file") MultipartFile file) throws Exception {
-		var newFile = new File(this.file, id);
+		var newFile = new File(this.file, uid);
 		file.transferTo(newFile);
 		FileUtils.assertFileExists(newFile);
-		var msg = MessageBuilder.withPayload(newFile).setHeader(Headers.PACKAGE_ID, id)
-				.build();
-		this.apiToPipelineChannel.send(msg);
+		Assert.isTrue(this.service.launchPipelineForPodcastPackage(uid, newFile),
+				"the pipeline says no.");
 		return ResponseEntity.accepted().body(Map.of("status", "OK"));
 	}
 

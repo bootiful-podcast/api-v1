@@ -1,4 +1,4 @@
-package pl;
+package pl.aws;
 
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -6,6 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
+import pl.FileUtils;
 
 import java.io.File;
 import java.io.FileReader;

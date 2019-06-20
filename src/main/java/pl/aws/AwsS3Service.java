@@ -1,4 +1,4 @@
-package pl;
+package pl.aws;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -12,14 +12,21 @@ import org.springframework.util.Assert;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.URI;
 
 @Log4j2
 @RequiredArgsConstructor
-class AwsS3Service {
+public class AwsS3Service {
 
 	private final String bucketName;
 
 	private final AmazonS3 s3;
+
+	public URI createS3Uri(String bucketName, String nestedBucketFolder,
+			String fileName) {
+		return URI
+				.create("s3://" + bucketName + "/" + nestedBucketFolder + "/" + fileName);
+	}
 
 	@SneakyThrows
 	public String upload(String contentType, String nestedBucketFolder, File file) {
@@ -33,8 +40,9 @@ class AwsS3Service {
 						file.getName(), inputStream, objectMetadata);
 				PutObjectResult putObjectResult = this.s3.putObject(request);
 				Assert.notNull(putObjectResult, "the S3 file hasn't been uploaded");
-				return "s3://" + this.bucketName + "/" + nestedBucketFolder + "/"
-						+ file.getName();
+				return this
+						.createS3Uri(this.bucketName, nestedBucketFolder, file.getName())
+						.toString();
 			}
 		}
 		return null;

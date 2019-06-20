@@ -17,7 +17,7 @@ import java.util.Collection;
 @AllArgsConstructor
 @Log4j2
 @NoArgsConstructor
-class UploadPackageManifest {
+public class PodcastPackageManifest {
 
 	@Data
 	@AllArgsConstructor
@@ -29,7 +29,7 @@ class UploadPackageManifest {
 
 	}
 
-	private String description, uid;
+	private String title, description, uid;
 
 	public Collection<Media> getMedia() {
 		return new ArrayList<>(this.media);
@@ -64,18 +64,19 @@ class UploadPackageManifest {
 	}
 
 	@SneakyThrows
-	static UploadPackageManifest from(File manifest) {
+	static PodcastPackageManifest from(File manifest) {
 
 		var dbf = DocumentBuilderFactory.newInstance();
 		var db = dbf.newDocumentBuilder();
 		var doc = db.parse(manifest);
-		var build = new UploadPackageManifest();
+		var build = new PodcastPackageManifest();
 		var podcast = doc.getElementsByTagName("podcast");
 		Assert.isTrue(podcast.getLength() > 0,
 				"there must be at least one podcast element in a manifest");
 		var attributes = podcast.item(0).getAttributes();
 		build.setDescription(readAttributeFrom("description", attributes));
 		build.setUid(readAttributeFrom("uid", attributes));
+		build.setTitle(readAttributeFrom("title", attributes));
 		String[] exts = "mp3,wav".split(",");
 		for (String ext : exts) {
 			Media mediaFromDoc = getMediaFromDoc(doc, ext);
@@ -86,8 +87,8 @@ class UploadPackageManifest {
 		return build;
 	}
 
-	private static Media getMediaFromDoc(Document doc, String mp3Ext) {
-		return readMedia(doc.getElementsByTagName(mp3Ext), mp3Ext);
+	private static Media getMediaFromDoc(Document doc, String ext) {
+		return readMedia(doc.getElementsByTagName(ext), ext);
 	}
 
 }

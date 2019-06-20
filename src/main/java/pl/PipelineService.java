@@ -15,7 +15,7 @@ class PipelineService {
 
 	public boolean launchPipelineForPodcastPackage(String uid, File podcastPackage) {
 		var msg = MessageBuilder.withPayload(podcastPackage.getAbsolutePath())//
-				.setHeader(Headers.PACKAGE_ID, uid)//
+				.setHeader(Headers.UID, uid)//
 				.build();
 		return this.pipeline.send(msg);
 

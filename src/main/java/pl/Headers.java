@@ -10,13 +10,15 @@ public class Headers {
 
 	public static final String CONTENT_TYPE = "contentType";
 
+	public static final String ASSET_TYPE = "assetType";
+
 	public static final String S3_PATH = "s3Path";
 
 	public static final String PROCESSOR_REQUEST_INTERVIEW = "interview-file";
 
 	public static final String PROCESSOR_REQUEST_INTRODUCTION = "introduction-file";
 
-	public static final String PACKAGE_ID = "packageIdHeader";
+	// public static final String PACKAGE_ID = "packageIdHeader";
 
 	public static final String UID = "uidHeader";
 
