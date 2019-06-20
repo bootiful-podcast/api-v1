@@ -22,15 +22,9 @@ import java.util.function.Function;
 @Log4j2
 class AwsEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
-	private void installAwsCredentials() {
-
-	}
-
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment,
 			SpringApplication application) {
-
-		installAwsCredentials();
 
 		var awsRoot = new File(System.getProperty("user.home"), ".aws");
 		readFileIntoEnvironment(new File(awsRoot, "credentials"), "aws-credentials",

@@ -21,9 +21,9 @@ class AwsConfiguration {
 	}
 
 	@Bean
-	AmazonS3 amazonS3(@Value("${aws_access_key_id}") String accessKey,
-			@Value("${aws_secret_access_key}") String secret,
-			@Value("${aws_region}") String region) {
+	AmazonS3 amazonS3(@Value("${AWS_ACCESS_KEY_ID}") String accessKey,
+			@Value("${AWS_SECRET_ACCESS_KEY}") String secret,
+			@Value("${AWS_REGION}") String region) {
 
 		log.info(accessKey);
 		log.info(secret);
