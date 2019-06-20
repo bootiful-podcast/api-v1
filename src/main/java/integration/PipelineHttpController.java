@@ -31,8 +31,7 @@ class PipelineHttpController {
 		var newFile = new File(this.file, uid);
 		file.transferTo(newFile);
 		FileUtils.assertFileExists(newFile);
-		Assert.isTrue(this.service.launchPipeline(uid, newFile),
-				"the pipeline says no.");
+		Assert.isTrue(this.service.launchPipeline(uid, newFile), "the pipeline says no.");
 		return ResponseEntity.accepted().body(Map.of("status", "OK"));
 	}
 

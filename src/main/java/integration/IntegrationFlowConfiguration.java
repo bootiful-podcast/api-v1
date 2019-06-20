@@ -144,8 +144,8 @@ class IntegrationFlowConfiguration {
 		};
 	}
 
-	private static void establishHeaderIfMatches(HashMap<String, String> request, Message<?> msg,
-			String header, String newKey) {
+	private static void establishHeaderIfMatches(HashMap<String, String> request,
+			Message<?> msg, String header, String newKey) {
 		if (isTrue(msg.getHeaders(), header)) {
 			request.put(newKey, msg.getHeaders().get(S3_PATH, String.class));
 		}

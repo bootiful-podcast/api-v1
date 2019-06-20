@@ -13,7 +13,8 @@ class PipelineService {
 		this.pipeline = channel;
 	}
 
-	public boolean launchPipeline(String uid, File archiveFromClientContainingPodcastAssets) {
+	public boolean launchPipeline(String uid,
+			File archiveFromClientContainingPodcastAssets) {
 		var msg = MessageBuilder //
 				.withPayload(archiveFromClientContainingPodcastAssets.getAbsolutePath())//
 				.setHeader(Headers.UID, uid)//
