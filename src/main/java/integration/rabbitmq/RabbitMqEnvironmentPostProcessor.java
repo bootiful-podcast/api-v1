@@ -18,7 +18,7 @@ class RabbitMqEnvironmentPostProcessor implements EnvironmentPostProcessor {
 			SpringApplication application) {
 
 		var rmqAddress = System.getenv("RMQ_ADDRESS");
-		log.info("RMQ_ADDRESS: " + rmqAddress);
+		log.debug("RMQ_ADDRESS: " + rmqAddress);
 		if (!StringUtils.hasText(rmqAddress))
 			return;
 
