@@ -11,11 +11,14 @@ public class RabbitHelper {
 	private final AmqpAdmin amqpAdmin;
 
 	public void defineDestination(String exchange, String queue, String routingKey) {
+
 		Queue q = this.queue(queue);
-		Exchange e = this.exchange(exchange);
-		Binding b = this.binding(q, e, routingKey);
 		amqpAdmin.declareQueue(q);
+
+		Exchange e = this.exchange(exchange);
 		amqpAdmin.declareExchange(e);
+
+		Binding b = this.binding(q, e, routingKey);
 		amqpAdmin.declareBinding(b);
 	}
 

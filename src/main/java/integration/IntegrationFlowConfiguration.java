@@ -144,14 +144,12 @@ class IntegrationFlowConfiguration {
 		};
 	}
 
-	private void establishHeaderIfMatches(HashMap<String, String> request, Message<?> msg,
+	private static void establishHeaderIfMatches(HashMap<String, String> request, Message<?> msg,
 			String header, String newKey) {
 		if (isTrue(msg.getHeaders(), header)) {
 			request.put(newKey, msg.getHeaders().get(S3_PATH, String.class));
 		}
 	}
-	// todo there's got to be a better way to do this.
-	// todo wasn't there a rmqProcessorAggregateArtifactsTransformer thing in Java itself?
 
 	private static String determineContentTypeFor(File file) {
 		Assert.notNull(file, "the file must not be null");
@@ -169,7 +167,7 @@ class IntegrationFlowConfiguration {
 		throw new RuntimeException("Invalid file-type!");
 	}
 
-	private Boolean isTrue(MessageHeaders headers, String header) {
+	private static Boolean isTrue(MessageHeaders headers, String header) {
 		return headers.get(header, Boolean.class);
 	}
 
