@@ -9,7 +9,11 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -67,20 +71,35 @@ public class PodcastPackageManifest {
 
 	@SneakyThrows
 	public static PodcastPackageManifest from(File manifest) {
+		try (FileInputStream fileInputStream = new FileInputStream(manifest)) {
+			return from(fileInputStream);
+		}
+	}
+
+	@SneakyThrows
+	private static PodcastPackageManifest from(InputStream inputStream) {
+
 		var dbf = DocumentBuilderFactory.newInstance();
 		var db = dbf.newDocumentBuilder();
-		var doc = db.parse(manifest);
+		var doc = db.parse(inputStream);
 		var build = new PodcastPackageManifest();
 		var podcast = doc.getElementsByTagName("podcast");
 		Assert.isTrue(podcast.getLength() > 0,
-				"there must be at least one podcast element in a manifest");
+			"there must be at least one podcast element in a manifest");
 		var attributes = podcast.item(0).getAttributes();
 		build.setDescription(readAttributeFrom("description", attributes));
 		build.setUid(readAttributeFrom("uid", attributes));
 		build.setTitle(readAttributeFrom("title", attributes));
 		List.of("mp3,wav".split(",")).forEach(
-				ext -> getMediaFromDoc(doc, ext).ifPresent(x -> build.media.add(x)));
+			ext -> getMediaFromDoc(doc, ext).ifPresent(x -> build.media.add(x)));
 		return build;
+	}
+
+	@SneakyThrows
+	public static PodcastPackageManifest from(String manifestContents) {
+		try (var in = new ByteArrayInputStream(manifestContents.getBytes(Charset.forName("UTF-8")))) {
+			return from(in);
+		}
 	}
 
 	private static Optional<Media> getMediaFromDoc(Document doc, String ext) {
