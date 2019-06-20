@@ -214,7 +214,7 @@ class IntegrationFlowConfiguration {
 				processorConfig.getRequestsRoutingKey());
 
 		helper.defineDestination(processorConfig.getRepliesExchange(),
-				processorConfig.getRequestsQueue(),
+				processorConfig.getRepliesQueue(),
 				processorConfig.getRepliesRoutingKey());
 
 		var processorOutboundAdapter = Amqp //
