@@ -1,6 +1,14 @@
 package integration;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import integration.aws.AwsS3Service;
+import integration.events.PodcastArchiveUploadedEvent;
+import integration.events.PodcastArtifactsUploadedToProcessorEvent;
+import integration.events.PodcastProcessedEvent;
+import integration.rabbitmq.RabbitHelper;
+import integration.utils.FileUtils;
+import integration.utils.JsonHelper;
+import integration.utils.UnzipUtils;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -19,14 +27,6 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-import integration.rabbitmq.RabbitHelper;
-import integration.aws.AwsS3Service;
-import integration.events.PodcastArchiveUploadedEvent;
-import integration.events.PodcastArtifactsUploadedToProcessorEvent;
-import integration.events.PodcastProcessedEvent;
-import integration.utils.FileUtils;
-import integration.utils.JsonHelper;
-import integration.utils.UnzipUtils;
 
 import java.io.File;
 import java.util.*;
@@ -43,8 +43,6 @@ class IntegrationFlowConfiguration {
 	private final PipelineProperties properties;
 
 	private final JsonHelper json;
-
-	// private final ChannelsConfiguration channels;
 
 	private final Function<File, Collection<Message<File>>> unzipSplitter;
 
@@ -101,9 +99,9 @@ class IntegrationFlowConfiguration {
 				});
 				return builder.build();
 			});
-
 			return stream.collect(Collectors.toList());
 		};
+
 		this.s3UploadHandler = (file, messageHeaders) -> {
 			var contentType = messageHeaders.get(CONTENT_TYPE, String.class);
 			var manifest = messageHeaders.get(PACKAGE_MANIFEST,
@@ -120,6 +118,7 @@ class IntegrationFlowConfiguration {
 					.setHeader(S3_PATH, uriAsString) //
 					.build();
 		};
+
 		this.aggregator = spec -> spec.outputProcessor(group -> {
 			var messages = group.getMessages();
 			var request = new HashMap<String, String>();
@@ -135,6 +134,7 @@ class IntegrationFlowConfiguration {
 			});
 			return request;
 		});
+
 		this.rmqProcessorAggregateArtifactsTransformer = (payload, headers) -> {
 			var json = jsonService.toJson(payload);
 			var builder = MessageBuilder.withPayload(json);
@@ -214,6 +214,10 @@ class IntegrationFlowConfiguration {
 		helper.defineDestination(processorConfig.getRequestsExchange(),
 				processorConfig.getRequestsQueue(),
 				processorConfig.getRequestsRoutingKey());
+
+		helper.defineDestination(processorConfig.getRepliesExchange(),
+				processorConfig.getRequestsQueue(),
+				processorConfig.getRepliesRoutingKey());
 
 		var processorOutboundAdapter = Amqp //
 				.outboundAdapter(template)//
