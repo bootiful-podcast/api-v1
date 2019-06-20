@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-APP_NAME=rmq-integration
+APP_NAME=service
 
-cf push -b java_buildpack --no-start -p target/integration-0.0.1-SNAPSHOT.jar ${APP_NAME}
+cf push -b java_buildpack --no-start -p target/pipeline-0.0.1-SNAPSHOT.jar ${APP_NAME}
 
 cf set-env ${APP_NAME} JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+}}'
 

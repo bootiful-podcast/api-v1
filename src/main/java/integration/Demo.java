@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @Deprecated
 @Log4j2
-@Configuration
+// @Configuration
 @RequiredArgsConstructor
 class Demo {
 
