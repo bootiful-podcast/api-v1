@@ -106,11 +106,12 @@ class AwsS3FlowConfiguration {
 			var uid = manifest.getUid();
 			var s3Path = s3.upload(contentType, uid, file);
 			var role = messageHeaders.get(Headers.ASSET_TYPE, String.class);
+			var uriAsString = s3Path.toString();
 			publisher.publishEvent(
-					new PodcastArtifactsUploadedToProcessorEvent(uid, role, s3Path));
+					new PodcastArtifactsUploadedToProcessorEvent(uid, role, uriAsString));
 			return MessageBuilder //
 					.withPayload(file) //
-					.setHeader(Headers.S3_PATH, s3Path) //
+					.setHeader(Headers.S3_PATH, uriAsString) //
 					.build();
 		};
 		this.aggregator = spec -> spec.outputProcessor(group -> {

@@ -1,5 +1,6 @@
 package pl;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Configuration;
@@ -20,18 +21,12 @@ import java.util.UUID;
 @Deprecated
 @Log4j2
 @Configuration
+@RequiredArgsConstructor
 class Demo {
-
-	private final PipelineService pipelineService;
 
 	private final RestTemplate template;
 
 	private File file = new File("/Users/joshlong/Desktop/pkg.zip".trim());
-
-	Demo(PipelineService service, RestTemplate template) {
-		this.template = template;
-		this.pipelineService = service;
-	}
 
 	private <T> ResponseEntity<T> post(String url, File file, Class<T> replyClazz) {
 		var headers = new HttpHeaders();
