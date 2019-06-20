@@ -15,7 +15,7 @@ class RabbitMqEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment,
-			SpringApplication application) {
+																																				SpringApplication application) {
 
 		var rmqAddress = System.getenv("RMQ_ADDRESS");
 		log.debug("RMQ_ADDRESS: " + rmqAddress);
@@ -29,10 +29,10 @@ class RabbitMqEnvironmentPostProcessor implements EnvironmentPostProcessor {
 		var vhost = uri.getPath();
 		var host = uri.getHost();
 		var port = uri.getPort();
-
-		String user = null, pw = null;
+		var user = (String) null;
+		var pw = (String) null;
 		if (StringUtils.hasText(userInfo) && userInfo.contains(":")) {
-			String[] parts = userInfo.split(":");
+			var parts = userInfo.split(":");
 			user = parts[0];
 			pw = parts[1];
 		}

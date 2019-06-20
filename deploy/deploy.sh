@@ -12,6 +12,7 @@ cf set-env $APP_NAME CF_ORG $CF_ORG
 cf set-env $APP_NAME CF_PASSWORD $CF_PASSWORD
 cf set-env $APP_NAME CF_SPACE $CF_SPACE
 cf set-env $APP_NAME CF_USER $CF_USER
+cf set-env $APP_NAME RMQ_ADDRESS $RMQ_ADDRESS
 
 cf restart $APP_NAME
 
