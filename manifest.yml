@@ -3,6 +3,7 @@ applications:
   - name: service
     path: target/service-0.0.1-SNAPSHOT.jar
     buildpack: https://github.com/cloudfoundry/java-buildpack.git
+    random-route: true
     services:
       - bootiful-podcast-mq
       - bootiful-podcast-db
