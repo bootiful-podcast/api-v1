@@ -13,7 +13,6 @@ import pl.events.PodcastArtifactsUploadedToProcessorEvent;
 import pl.events.PodcastProcessedEvent;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 
 @Log4j2
@@ -27,7 +26,7 @@ class Recorder {
 	private final PodcastRepository repository;
 
 	@EventListener
-	public void packageUploaded(PodcastArchiveUploadedEvent uploadedEvent) {
+	public void productionStartedForUpload(PodcastArchiveUploadedEvent uploadedEvent) {
 		log.info("podcast archive has been uploaded: " + uploadedEvent.toString());
 		var manifest = uploadedEvent.getSource();
 		var podcast = Podcast.builder().date(new Date())
@@ -35,8 +34,7 @@ class Recorder {
 				.uid(manifest.getUid()).build();
 		repository.save(podcast);
 
-		Collection<PodcastPackageManifest.Media> media = uploadedEvent.getSource()
-				.getMedia();
+		var media = uploadedEvent.getSource().getMedia();
 		if (!media.isEmpty()) {
 			for (PodcastPackageManifest.Media m : media) {
 				var extension = m.getExtension();
@@ -59,46 +57,36 @@ class Recorder {
 
 	}
 
-	private static void doUpdateWithArtifactS3Uri(Podcast podcast, String typeToFind,
-			String uri) {
-		podcast.getMedia().stream().filter(m -> m.getType().equalsIgnoreCase(typeToFind))
-				.forEach(m -> m.setHref(uri));
-
-	}
-
 	@EventListener
-	public void s3ArtifactUpload(PodcastArtifactsUploadedToProcessorEvent event) {
+	public void artifactsUploadedToS3(PodcastArtifactsUploadedToProcessorEvent event) {
 		var files = event.getSource();
 		var uid = files.getUid();
-		repository.findByUid(uid).ifPresentOrElse(
-				podcast -> this.doS3ArtifactUpload(event, podcast),
-				() -> log.info("there is no " + Podcast.class.getName() + " matching UID "
-						+ uid));
+		repository.findByUid(uid).ifPresentOrElse(podcast -> {
+			var fileMetadata = event.getSource();
+			var uri = fileMetadata.getS3Uri();
+			var type = fileMetadata.getType();
+			podcast.getMedia().stream().filter(m -> m.getType().equalsIgnoreCase(type))
+					.forEach(m -> m.setHref(uri));
+			repository.save(podcast);
+			log.info(event.getClass().getName() + " : " + "s3 artifact uploaded for file "
+					+ fileMetadata.getType() + " for project with UID " + uid
+					+ " which is an asset of type " + type);
+		}, () -> log
+				.info("there is no " + Podcast.class.getName() + " matching UID " + uid));
 
-	}
-
-	private void doS3ArtifactUpload(PodcastArtifactsUploadedToProcessorEvent event,
-			Podcast podcast) {
-		var fileMetadata = event.getSource();
-		var uri = fileMetadata.getS3Uri();
-		var type = fileMetadata.getType();
-		doUpdateWithArtifactS3Uri(podcast, type, uri);
-		repository.save(podcast);
 	}
 
 	@EventListener
-	public void packageProcessed(PodcastProcessedEvent event) {
+	public void podcastProcessed(PodcastProcessedEvent event) {
 		log.info("podcast audio file has been processed: " + event.toString());
 		var uid = event.getUid();
-		repository.findByUid(uid).ifPresentOrElse(p -> doPackageProcessed(event, p),
-				() -> log.info("there was no " + Podcast.class.getName()
-						+ " matching UID " + uid));
-	}
-
-	private void doPackageProcessed(PodcastProcessedEvent event, Podcast podcast) {
-		var uri = s3Service.createS3Uri(event.getBucketName(), "", event.getFileName());
-		podcast.setProductionArtifact(uri.toString());
-		repository.save(podcast);
+		repository.findByUid(uid).ifPresentOrElse(p -> {
+			var uri = s3Service.createS3Uri(event.getBucketName(), "",
+					event.getFileName());
+			p.setProductionArtifact(uri.toString());
+			repository.save(p);
+		}, () -> log.info(
+				"there was no " + Podcast.class.getName() + " matching UID " + uid));
 	}
 
 }
