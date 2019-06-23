@@ -6,16 +6,14 @@ import integration.aws.AwsS3Service;
 import integration.events.PodcastArchiveUploadedEvent;
 import integration.events.PodcastArtifactsUploadedToProcessorEvent;
 import integration.events.PodcastProcessedEvent;
+import integration.utils.FileUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.event.EventListener;
-import org.springframework.integration.file.support.FileUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -63,6 +61,8 @@ class Recorder {
 
 	@EventListener
 	public void artifactsUploadedToS3(PodcastArtifactsUploadedToProcessorEvent event) {
+
+		// record data
 		var files = event.getSource();
 		var uid = files.getUid();
 		repository.findByUid(uid).ifPresentOrElse(podcast -> {
@@ -77,6 +77,14 @@ class Recorder {
 					+ " which is an asset of type " + type);
 		}, () -> log
 				.info("there is no " + Podcast.class.getName() + " matching UID " + uid));
+
+		// cleanup
+		var stagingDirectory = event.getSource().getStagingDirectory();
+		Assert.isTrue(
+			!stagingDirectory.exists()
+				|| FileUtils.deleteDirectoryRecursively(stagingDirectory),
+			"we couldn't delete the staging directory. "
+				+ "this could imperil our free space.");
 
 	}
 
