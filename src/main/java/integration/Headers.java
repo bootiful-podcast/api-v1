@@ -6,6 +6,8 @@ public class Headers {
 
 	public static final String IS_INTERVIEW_FILE = "isInterviewFile";
 
+	public static final String ARTIFACT_STAGING_DIRECTORY = "artifactStagingDirectory";
+
 	public static final String IS_INTRODUCTION_FILE = "isIntroductionFile";
 
 	public static final String CONTENT_TYPE = "contentType";

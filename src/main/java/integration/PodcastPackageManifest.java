@@ -85,19 +85,20 @@ public class PodcastPackageManifest {
 		var build = new PodcastPackageManifest();
 		var podcast = doc.getElementsByTagName("podcast");
 		Assert.isTrue(podcast.getLength() > 0,
-			"there must be at least one podcast element in a manifest");
+				"there must be at least one podcast element in a manifest");
 		var attributes = podcast.item(0).getAttributes();
 		build.setDescription(readAttributeFrom("description", attributes));
 		build.setUid(readAttributeFrom("uid", attributes));
 		build.setTitle(readAttributeFrom("title", attributes));
 		List.of("mp3,wav".split(",")).forEach(
-			ext -> getMediaFromDoc(doc, ext).ifPresent(x -> build.media.add(x)));
+				ext -> getMediaFromDoc(doc, ext).ifPresent(x -> build.media.add(x)));
 		return build;
 	}
 
 	@SneakyThrows
 	public static PodcastPackageManifest from(String manifestContents) {
-		try (var in = new ByteArrayInputStream(manifestContents.getBytes(Charset.forName("UTF-8")))) {
+		try (var in = new ByteArrayInputStream(
+				manifestContents.getBytes(Charset.forName("UTF-8")))) {
 			return from(in);
 		}
 	}
