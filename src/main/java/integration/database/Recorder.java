@@ -32,8 +32,8 @@ class Recorder {
 		log.info("podcast archive has been uploaded: " + uploadedEvent.toString());
 		var manifest = uploadedEvent.getSource();
 		var podcast = Podcast.builder().date(new Date())
-			.description(manifest.getDescription()).title(manifest.getTitle())
-			.uid(manifest.getUid()).build();
+				.description(manifest.getDescription()).title(manifest.getTitle())
+				.uid(manifest.getUid()).build();
 		repository.save(podcast);
 
 		var media = uploadedEvent.getSource().getMedia();
@@ -42,10 +42,10 @@ class Recorder {
 				var extension = m.getExtension();
 
 				var interviewMedia = Media.builder().fileName(m.getInterview())
-					.extension(extension).type(AssetTypes.TYPE_INTERVIEW).build();
+						.extension(extension).type(AssetTypes.TYPE_INTERVIEW).build();
 				var introMedia = Media.builder().extension(extension)
-					.type(AssetTypes.TYPE_INTRODUCTION).fileName(m.getIntroduction())
-					.build();
+						.type(AssetTypes.TYPE_INTRODUCTION).fileName(m.getIntroduction())
+						.build();
 				if (podcast.getMedia() == null) {
 					podcast.setMedia(new ArrayList<>());
 				}
@@ -62,9 +62,9 @@ class Recorder {
 	@EventListener
 	public void cleanUpStagingDirectory(PodcastArtifactsUploadedToProcessorEvent event) {
 		File stagingDirectory = event.getSource().getStagingDirectory();
-		Assert.isTrue(
-			!stagingDirectory.exists() || stagingDirectory.delete(), "we couldn't delete the staging directory. " +
-				"this could imperil our free space.");
+		Assert.isTrue(!stagingDirectory.exists() || stagingDirectory.delete(),
+				"we couldn't delete the staging directory. "
+						+ "this could imperil our free space.");
 	}
 
 	@EventListener
@@ -76,14 +76,13 @@ class Recorder {
 			var uri = fileMetadata.getS3Uri();
 			var type = fileMetadata.getType();
 			podcast.getMedia().stream().filter(m -> m.getType().equalsIgnoreCase(type))
-				.forEach(m -> m.setHref(uri));
+					.forEach(m -> m.setHref(uri));
 			repository.save(podcast);
 			log.info(event.getClass().getName() + " : " + "s3 artifact uploaded for file "
-				+ fileMetadata.getType() + " for project with UID " + uid
-				+ " which is an asset of type " + type);
+					+ fileMetadata.getType() + " for project with UID " + uid
+					+ " which is an asset of type " + type);
 		}, () -> log
-			.info("there is no " + Podcast.class.getName() + " matching UID " + uid));
-
+				.info("there is no " + Podcast.class.getName() + " matching UID " + uid));
 
 	}
 
@@ -93,11 +92,11 @@ class Recorder {
 		var uid = event.getUid();
 		repository.findByUid(uid).ifPresentOrElse(p -> {
 			var uri = s3Service.createS3Uri(event.getBucketName(), "",
-				event.getFileName());
+					event.getFileName());
 			p.setProductionArtifact(uri.toString());
 			repository.save(p);
 		}, () -> log.info(
-			"there was no " + Podcast.class.getName() + " matching UID " + uid));
+				"there was no " + Podcast.class.getName() + " matching UID " + uid));
 	}
 
 }
