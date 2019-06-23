@@ -61,7 +61,6 @@ class Recorder {
 
 	}
 
-
 	@EventListener
 	public void artifactsUploadedToS3(PodcastArtifactsUploadedToProcessorEvent event) {
 		var files = event.getSource();

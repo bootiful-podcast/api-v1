@@ -11,14 +11,16 @@ import java.io.File;
 @Component
 class StagingCleaner {
 
-
 	@EventListener
 	public void cleanUpStagingDirectory(PodcastArtifactsUploadedToProcessorEvent event) {
 
 		File stagingDirectory = event.getSource().getStagingDirectory();
 
-		Assert.isTrue(!stagingDirectory.exists() || FileUtils.deleteDirectoryRecursively(stagingDirectory),
-			"we couldn't delete the staging directory. "
-				+ "this could imperil our free space.");
+		Assert.isTrue(
+				!stagingDirectory.exists()
+						|| FileUtils.deleteDirectoryRecursively(stagingDirectory),
+				"we couldn't delete the staging directory. "
+						+ "this could imperil our free space.");
 	}
+
 }
