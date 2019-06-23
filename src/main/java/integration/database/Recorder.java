@@ -79,8 +79,10 @@ class Recorder {
 				.info("there is no " + Podcast.class.getName() + " matching UID " + uid));
 
 		var stagingDirectory = event.getSource().getFile();
-		Assert.isTrue(!stagingDirectory.exists() || FileUtils.deleteDirectoryRecursively(stagingDirectory),
-			"We couldn't delete the staging directory. This could imperil our free space.");
+		Assert.isTrue(
+				!stagingDirectory.exists()
+						|| FileUtils.deleteDirectoryRecursively(stagingDirectory),
+				"We couldn't delete the staging directory. This could imperil our free space.");
 	}
 
 	@EventListener
