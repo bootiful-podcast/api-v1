@@ -45,7 +45,9 @@ public class AwsS3Service {
 	public URI createS3Uri(String bucketName, String nestedBucketFolder,
 			String fileName) {
 		var uri = this.s3FqnFor(bucketName, nestedBucketFolder, fileName);
+		log.info("the S3 FQN URI is " + uri);
 		if (null == uri) {
+			log.info("the URI is null; returning null");
 			return null;
 		}
 		return URI.create(uri);

@@ -81,10 +81,10 @@ class Recorder {
 		// cleanup
 		var stagingDirectory = event.getSource().getStagingDirectory();
 		Assert.isTrue(
-			!stagingDirectory.exists()
-				|| FileUtils.deleteDirectoryRecursively(stagingDirectory),
-			"we couldn't delete the staging directory. "
-				+ "this could imperil our free space.");
+				!stagingDirectory.exists()
+						|| FileUtils.deleteDirectoryRecursively(stagingDirectory),
+				"we couldn't delete the staging directory. "
+						+ "this could imperil our free space.");
 
 	}
 

@@ -26,7 +26,6 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.util.*;
@@ -81,20 +80,21 @@ class IntegrationFlowConfiguration {
 						.setHeader(PACKAGE_MANIFEST, uploadPackageManifest);
 
 				uploadPackageManifest.getMedia().forEach(media -> {
-
 					var interview = f.getName().contains(media.getInterview());
 					var intro = f.getName().contains(media.getIntroduction());
-					var mediaMap = Map.of( //
-							IS_INTERVIEW_FILE, f.getName().contains(media.getInterview()), //
-							IS_INTRODUCTION_FILE,
-							f.getName().contains(media.getIntroduction()), //
-							ARTIFACT_STAGING_DIRECTORY, stagingDirectoryForRequest);
-					mediaMap.forEach(builder::setHeader);
 					var type = interview ? AssetTypes.TYPE_INTERVIEW
 							: (intro ? AssetTypes.TYPE_INTRODUCTION : null);
-					if (StringUtils.hasText(type)) {
-						builder.setHeader(ASSET_TYPE, type);
-					}
+					var mediaMap = Map.of( //
+							IS_INTERVIEW_FILE, interview, //
+							IS_INTRODUCTION_FILE, intro, //
+							ASSET_TYPE, type, ARTIFACT_STAGING_DIRECTORY,
+							stagingDirectoryForRequest);
+
+					mediaMap.forEach((h, v) -> {
+						if (v != null) {
+							builder.setHeader(h, v);
+						}
+					});
 				});
 				return builder.build();
 			});
@@ -107,8 +107,11 @@ class IntegrationFlowConfiguration {
 					PodcastPackageManifest.class);
 			var uid = manifest.getUid();
 			Assert.notNull(uid, "the UID must not be null");
+			log.info("trying to upload artifact " + file.getAbsolutePath() + " to S3. ");
 			var s3Path = s3.upload(contentType, uid, file);
 			var role = messageHeaders.get(ASSET_TYPE, String.class);
+			log.info("the asset type is " + role);
+			log.info("the s3 path is " + s3Path);
 			var uriAsString = s3Path.toString();
 			publisher.publishEvent(
 					new PodcastArtifactsUploadedToProcessorEvent(uid, role, uriAsString,
