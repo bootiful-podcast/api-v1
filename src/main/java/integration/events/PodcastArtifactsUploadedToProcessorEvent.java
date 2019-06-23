@@ -20,7 +20,7 @@ public class PodcastArtifactsUploadedToProcessorEvent extends ApplicationEvent {
 		super(PodcastFiles//
 				.builder() //
 				.uid(uid) //
-				.stagingDirectory(stagingDirectory) //
+			.file(stagingDirectory) //
 				.type(type) //
 				.s3Uri(s3Uri) //
 				.build() //
@@ -35,7 +35,7 @@ public class PodcastArtifactsUploadedToProcessorEvent extends ApplicationEvent {
 
 		private String uid, type, s3Uri;
 
-		private File stagingDirectory;
+		private File file;
 
 	}
 
