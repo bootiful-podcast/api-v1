@@ -30,7 +30,6 @@ class PipelineHttpController {
 
 	PipelineHttpController(PipelineProperties props, PodcastRepository repository,
 			PipelineService service) {
-
 		this.file = FileUtils.ensureDirectoryExists(props.getS3().getStagingDirectory());
 		this.service = service;
 		this.podcastRepository = repository;
@@ -39,14 +38,22 @@ class PipelineHttpController {
 	@GetMapping("/podcasts/{uid}/status")
 	ResponseEntity<?> getStatusForPodcast(@PathVariable String uid) {
 		Optional<Podcast> byUid = podcastRepository.findByUid(uid);
+
+		if (byUid.isPresent()) {
+			log.info("found the record by UID " + uid);
+		}
+
 		Optional<Map<?, ?>> response = byUid.map(podcast -> {
+			Map<String, String> statusMap;
 			if (null != podcast.getProductionArtifact()) {
-				return Map.of("media-url", podcast.getProductionArtifact(), "status",
+				statusMap = Map.of("media-url", podcast.getProductionArtifact(), "status",
 						this.finishedMessage);
 			}
 			else {
-				return Map.of("status", this.processingMessage);
+				statusMap = Map.of("status", this.processingMessage);
 			}
+			log.info("returning status: " + statusMap.toString());
+			return statusMap;
 		});
 		return response.map(reply -> ResponseEntity.ok().body(reply))
 				.orElse(ResponseEntity.noContent().build());
