@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-class Podcast {
+public class Podcast {
 
 	@Id
 	@GeneratedValue
