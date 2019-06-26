@@ -20,7 +20,7 @@ public abstract class FileUtils {
 
 	public static boolean deleteDirectoryRecursively(File f) {
 		Assert.notNull(f, "the file specified for deletion must be non-null");
-		File[] allContents = f.listFiles();
+		var allContents = f.listFiles();
 		if (allContents != null) {
 			for (File file : allContents) {
 				deleteDirectoryRecursively(file);

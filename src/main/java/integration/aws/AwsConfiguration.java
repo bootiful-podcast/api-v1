@@ -1,5 +1,6 @@
 package integration.aws;
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
@@ -27,11 +28,16 @@ class AwsConfiguration {
 			@Value("${AWS_SECRET_ACCESS_KEY}") String secret,
 			@Value("${AWS_REGION}") String region) {
 
-		log.info(accessKey);
-		log.info(secret);
-		log.info(region);
+		log.info(accessKey + ':' + secret + ':' + region);
 		var credentials = new BasicAWSCredentials(accessKey, secret);
+		var timeout = 5 * 60 * 1000;
+		var clientConfiguration = new ClientConfiguration()
+			.withClientExecutionTimeout(timeout).withConnectionMaxIdleMillis(timeout)
+			.withConnectionTimeout(timeout).withConnectionTTL(timeout)
+			.withRequestTimeout(timeout);
+
 		return AmazonS3ClientBuilder.standard()
+			.withClientConfiguration(clientConfiguration)
 				.withCredentials(new AWSStaticCredentialsProvider(credentials))
 				.withRegion(Regions.fromName(region)).build();
 	}

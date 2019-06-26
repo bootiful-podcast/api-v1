@@ -14,29 +14,25 @@ import java.util.zip.ZipInputStream;
 
 public class UnzipUtils {
 
+	@SneakyThrows
 	public static Collection<File> unzip(File zipfile, File targetDirectory) {
 		var list = new ArrayList<File>();
-		unzip(zipfile, targetDirectory, list);
-		return list;
-	}
-
-	@SneakyThrows
-	private static void unzip(File fileZip, File destDir, Collection<File> files) {
 		var buffer = new byte[1024];
-		try (var zis = new ZipInputStream(new FileInputStream(fileZip))) {
+		try (var zis = new ZipInputStream(new FileInputStream(zipfile))) {
 			ZipEntry zipEntry;
 			while ((zipEntry = zis.getNextEntry()) != null) {
-				var newFile = newFile(destDir, zipEntry);
+				var newFile = newFile(targetDirectory, zipEntry);
 				try (var fos = new BufferedOutputStream(new FileOutputStream(newFile))) {
 					var len = 0;
 					while ((len = zis.read(buffer)) > 0) {
 						fos.write(buffer, 0, len);
 					}
 				}
-				files.add(newFile);
+				list.add(newFile);
 			}
 			zis.closeEntry();
 		}
+		return list;
 	}
 
 	@SneakyThrows

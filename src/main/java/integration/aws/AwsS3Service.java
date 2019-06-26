@@ -1,16 +1,17 @@
 package integration.aws;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.*;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.net.URI;
 
 @Log4j2
@@ -50,15 +51,13 @@ public class AwsS3Service {
 			var objectMetadata = new ObjectMetadata();
 			objectMetadata.setContentType(contentType);
 			objectMetadata.setContentLength(file.length());
-			try (var inputStream = new BufferedInputStream(new FileInputStream(file))) {
-				var request = new PutObjectRequest(this.uploadBucketName
-						+ (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder),
-						file.getName(), inputStream, objectMetadata);
-				PutObjectResult putObjectResult = this.s3.putObject(request);
-				Assert.notNull(putObjectResult, "the S3 file hasn't been uploaded");
-				return this.createS3Uri(this.uploadBucketName, nestedBucketFolder,
-						file.getName());
-			}
+			var request = new PutObjectRequest(this.uploadBucketName
+				+ (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder),
+				file.getName(), file);
+			var putObjectResult = this.s3.putObject(request);
+			Assert.notNull(putObjectResult, "the S3 file hasn't been uploaded");
+			return this.createS3Uri(this.uploadBucketName, nestedBucketFolder,
+				file.getName());
 		}
 		return null;
 	}
@@ -73,7 +72,7 @@ public class AwsS3Service {
 		}
 		String key = folder + fn;
 		try {
-			S3Object object = this.s3.getObject(new GetObjectRequest(bucket, key));
+			var object = this.s3.getObject(new GetObjectRequest(bucket, key));
 			Assert.notNull(object, "the fetch of the object should not be null");
 		}
 		catch (Exception e) {

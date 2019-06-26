@@ -25,11 +25,13 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -56,6 +58,7 @@ class IntegrationFlowConfiguration {
 
 	IntegrationFlowConfiguration(PipelineProperties properties, JsonHelper jsonService,
 			AwsS3Service s3, ApplicationEventPublisher publisher) {
+		var retryTemplate = new RetryTemplate();
 		this.properties = properties;
 		this.publisher = publisher;
 		this.json = jsonService;
@@ -107,8 +110,16 @@ class IntegrationFlowConfiguration {
 					PodcastPackageManifest.class);
 			var uid = manifest.getUid();
 			Assert.notNull(uid, "the UID must not be null");
-			log.info("trying to upload artifact " + file.getAbsolutePath() + " to S3. ");
-			var s3Path = s3.upload(contentType, uid, file);
+			log.info("begin: s3 artifact upload " + file.getAbsolutePath());
+			var s3Path = retryTemplate.execute(context -> {
+
+				log.info("trying to upload " + file.getAbsolutePath()
+					+ " with content-type " + contentType + " with UID " + uid
+					+ ", attempt #" + context.getRetryCount());
+
+				return s3.upload(contentType, uid, file);
+			});
+			log.info("end: s3 artifact upload " + file.getAbsolutePath());
 			var role = messageHeaders.get(ASSET_TYPE, String.class);
 			log.info("the asset type is " + role);
 			log.info("the s3 path is " + s3Path);
@@ -146,8 +157,8 @@ class IntegrationFlowConfiguration {
 		};
 	}
 
-	private static void establishHeaderIfMatches(HashMap<String, String> request,
-			Message<?> msg, String header, String newKey) {
+	private static void establishHeaderIfMatches(Map<String, String> request,
+																																														Message<?> msg, String header, String newKey) {
 		if (isTrue(msg.getHeaders(), header)) {
 			request.put(newKey, msg.getHeaders().get(S3_PATH, String.class));
 		}
@@ -206,32 +217,45 @@ class IntegrationFlowConfiguration {
 	}
 
 	@Bean
-	IntegrationFlow audioProcessorPreparationPipeline(RabbitHelper helper,
-			AmqpTemplate template) {
+	IntegrationFlow audioProcessorPreparationPipeline(RabbitHelper helper) {
 
 		var processorConfig = properties.getProcessor();
 
 		helper.defineDestination(processorConfig.getRequestsExchange(),
-				processorConfig.getRequestsQueue(),
-				processorConfig.getRequestsRoutingKey());
+			processorConfig.getRequestsQueue(),
+			processorConfig.getRequestsRoutingKey());
 
 		helper.defineDestination(processorConfig.getRepliesExchange(),
-				processorConfig.getRepliesQueue(),
-				processorConfig.getRepliesRoutingKey());
-
-		var processorOutboundAdapter = Amqp //
-				.outboundAdapter(template)//
-				.exchangeName(processorConfig.getRequestsExchange()) //
-				.routingKey(processorConfig.getRequestsRoutingKey());
+			processorConfig.getRepliesQueue(),
+			processorConfig.getRepliesRoutingKey());
 
 		return IntegrationFlows//
-				.from(apiToPipelineChannel()) //
-				.split(File.class, this.unzipSplitter) //
-				.handle(File.class, this.s3UploadHandler) //
-				.aggregate(this.aggregator)//
-				.handle(Map.class, this.rmqProcessorAggregateArtifactsTransformer)//
-				.handle(processorOutboundAdapter)//
-				.get();
+			.from(apiToPipelineChannel()) //
+			.split(File.class, this.unzipSplitter) //
+			.channel(concurrentQueue()).get();
+	}
+
+	@Bean
+	IntegrationFlow concurrentIntegrationFlow(AmqpTemplate template) {
+
+		var processorConfig = properties.getProcessor();
+		var processorOutboundAdapter = Amqp //
+			.outboundAdapter(template)//
+			.exchangeName(processorConfig.getRequestsExchange()) //
+			.routingKey(processorConfig.getRequestsRoutingKey());
+		return IntegrationFlows //
+			.from(concurrentQueue())//
+			.handle(File.class, this.s3UploadHandler) //
+			.aggregate(this.aggregator) //
+			.handle(Map.class, this.rmqProcessorAggregateArtifactsTransformer)//
+			.handle(processorOutboundAdapter)//
+			.get();
+	}
+
+	@Bean
+	MessageChannel concurrentQueue() {
+		var te = Executors.newFixedThreadPool(10);
+		return MessageChannels.executor(te).get();
 	}
 
 	@Bean

@@ -18,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.net.URI;
 import java.util.Map;
-import java.util.Optional;
 
 @Log4j2
 @RestController
@@ -49,13 +48,8 @@ class PipelineHttpController {
 
 	@GetMapping("/podcasts/{uid}/status")
 	ResponseEntity<?> getStatusForPodcast(@PathVariable String uid) {
-		Optional<Podcast> byUid = podcastRepository.findByUid(uid);
-
-		if (byUid.isPresent()) {
-			log.info("found the record by UID " + uid);
-		}
-
-		Optional<Map<?, ?>> response = byUid.map(podcast -> {
+		var byUid = podcastRepository.findByUid(uid);
+		var response = byUid.map(podcast -> {
 			Map<String, String> statusMap;
 			if (null != podcast.getMediaS3Uri()) {
 				statusMap = Map.of( //
@@ -66,7 +60,7 @@ class PipelineHttpController {
 			else {
 				statusMap = Map.of("status", this.processingMessage);
 			}
-			log.info("returning status: " + statusMap.toString());
+			log.info("returning status: " + statusMap.toString() + " for " + uid);
 			return statusMap;
 		});
 		return response.map(reply -> ResponseEntity.ok().body(reply))
