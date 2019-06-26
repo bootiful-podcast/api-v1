@@ -96,7 +96,7 @@ class PipelineHttpController {
 		var inputStream = object.getObjectContent();
 		var inputStreamResource = new InputStreamResource(inputStream);
 		return ResponseEntity.ok()//
-			.header("X-Podcast-Uid", uid).contentType(this.mediaContentType)
+				.header("X-Podcast-Uid", uid).contentType(this.mediaContentType)
 				.header(HttpHeaders.CONTENT_DISPOSITION,
 						"attachment; filename=\"" + key + "\"")
 				.body(inputStreamResource);
