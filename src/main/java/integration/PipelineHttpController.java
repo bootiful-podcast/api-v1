@@ -93,12 +93,10 @@ class PipelineHttpController {
 	@SneakyThrows
 	private ResponseEntity<InputStreamResource> doDownloadFile(S3Object object,
 			String uid, String key) {
-		var objectMetadata = object.getObjectMetadata();
 		var inputStream = object.getObjectContent();
 		var inputStreamResource = new InputStreamResource(inputStream);
-
-		return ResponseEntity.ok().header("X-Podcast-Uid", uid)
-				.contentType(this.mediaContentType)
+		return ResponseEntity.ok()//
+			.header("X-Podcast-Uid", uid).contentType(this.mediaContentType)
 				.header(HttpHeaders.CONTENT_DISPOSITION,
 						"attachment; filename=\"" + key + "\"")
 				.body(inputStreamResource);
