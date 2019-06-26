@@ -19,7 +19,49 @@ public class AwsS3Service {
 
 	private final String uploadBucketName;
 
+	private final String outputBucketName;
+
 	private final AmazonS3 s3;
+
+	public URI createS3Uri(String bucketName, String nestedBucketFolder,
+			String fileName) {
+		var uri = this.s3FqnFor(bucketName, nestedBucketFolder, fileName);
+		log.debug("the S3 FQN URI is " + uri);
+		if (null == uri) {
+			log.debug("the URI is null; returning null");
+			return null;
+		}
+		return URI.create(uri);
+	}
+
+	public S3Object downloadOutputFile(String fn) {
+		return this.download(this.outputBucketName, null, fn);
+	}
+
+	public S3Object download(String bucketName, String nestedBucketFolder, String key) {
+		var bn = (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder);
+		var request = new GetObjectRequest(bucketName, bn + key);
+		return this.s3.getObject(request);
+	}
+
+	@SneakyThrows
+	public URI upload(String contentType, String nestedBucketFolder, File file) {
+		if (file.length() > 0) {
+			var objectMetadata = new ObjectMetadata();
+			objectMetadata.setContentType(contentType);
+			objectMetadata.setContentLength(file.length());
+			try (var inputStream = new BufferedInputStream(new FileInputStream(file))) {
+				var request = new PutObjectRequest(this.uploadBucketName
+						+ (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder),
+						file.getName(), inputStream, objectMetadata);
+				PutObjectResult putObjectResult = this.s3.putObject(request);
+				Assert.notNull(putObjectResult, "the S3 file hasn't been uploaded");
+				return this.createS3Uri(this.uploadBucketName, nestedBucketFolder,
+						file.getName());
+			}
+		}
+		return null;
+	}
 
 	private String s3FqnFor(String bucket, String folder, String fn) {
 		Assert.notNull(bucket, "the bucket name can't be null");
@@ -40,36 +82,6 @@ public class AwsS3Service {
 			return null;
 		}
 		return String.format("https://%s.s3.amazonaws.com/%s", bucket, key);
-	}
-
-	public URI createS3Uri(String bucketName, String nestedBucketFolder,
-			String fileName) {
-		var uri = this.s3FqnFor(bucketName, nestedBucketFolder, fileName);
-		log.debug("the S3 FQN URI is " + uri);
-		if (null == uri) {
-			log.debug("the URI is null; returning null");
-			return null;
-		}
-		return URI.create(uri);
-	}
-
-	@SneakyThrows
-	public URI upload(String contentType, String nestedBucketFolder, File file) {
-		if (file.length() > 0) {
-			var objectMetadata = new ObjectMetadata();
-			objectMetadata.setContentType(contentType);
-			objectMetadata.setContentLength(file.length());
-			try (var inputStream = new BufferedInputStream(new FileInputStream(file))) {
-				var request = new PutObjectRequest(this.uploadBucketName
-						+ (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder),
-						file.getName(), inputStream, objectMetadata);
-				PutObjectResult putObjectResult = this.s3.putObject(request);
-				Assert.notNull(putObjectResult, "the S3 file hasn't been uploaded");
-				return this.createS3Uri(this.uploadBucketName, nestedBucketFolder,
-						file.getName());
-			}
-		}
-		return null;
 	}
 
 }

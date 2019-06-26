@@ -23,7 +23,13 @@ public class Podcast {
 
 	private String uid; // this is to support correlation later on
 
-	private String title, description, notes, transcript, productionArtifact;
+	private String title, description, notes, transcript;
+
+	@Column(name = "s3_fqn_uri")
+	private String mediaS3Uri;
+
+	@Column(name = "s3_output_file_name")
+	private String s3OutputFileName;
 
 	private Date date = new Date();
 

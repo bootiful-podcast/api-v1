@@ -18,7 +18,7 @@ public class PipelineProperties {
 	@Data
 	public static class S3 {
 
-		private String bucketName;
+		private String inputBucketName, outputBucketName;
 
 		private File stagingDirectory;
 

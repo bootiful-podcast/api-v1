@@ -92,7 +92,8 @@ class Recorder {
 		repository.findByUid(uid).ifPresentOrElse(p -> {
 			var uri = s3Service.createS3Uri(event.getBucketName(), "",
 					event.getFileName());
-			p.setProductionArtifact(uri.toString());
+			p.setMediaS3Uri(uri.toString());
+			p.setS3OutputFileName(event.getFileName());
 			repository.save(p);
 		}, () -> log.info(
 				"there was no " + Podcast.class.getName() + " matching UID " + uid));

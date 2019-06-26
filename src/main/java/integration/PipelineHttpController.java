@@ -1,9 +1,15 @@
 package integration;
 
+import com.amazonaws.services.s3.model.S3Object;
+import integration.aws.AwsS3Service;
 import integration.database.Podcast;
 import integration.database.PodcastRepository;
 import integration.utils.FileUtils;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
@@ -22,16 +28,22 @@ class PipelineHttpController {
 
 	private final PipelineService service;
 
+	private final AwsS3Service s3;
+
 	private final PodcastRepository podcastRepository;
 
 	private final String processingMessage = "processing";
 
 	private final String finishedMessage = "finished processing";
 
-	PipelineHttpController(PipelineProperties props, PodcastRepository repository,
-			PipelineService service) {
+	private final MediaType mediaContentType = MediaType
+			.parseMediaType("binary/octet-stream");
+
+	PipelineHttpController(PipelineProperties props, AwsS3Service s3,
+			PodcastRepository repository, PipelineService service) {
 		this.file = FileUtils.ensureDirectoryExists(props.getS3().getStagingDirectory());
 		this.service = service;
+		this.s3 = s3;
 		this.podcastRepository = repository;
 	}
 
@@ -45,9 +57,11 @@ class PipelineHttpController {
 
 		Optional<Map<?, ?>> response = byUid.map(podcast -> {
 			Map<String, String> statusMap;
-			if (null != podcast.getProductionArtifact()) {
-				statusMap = Map.of("media-url", podcast.getProductionArtifact(), "status",
-						this.finishedMessage);
+			if (null != podcast.getMediaS3Uri()) {
+				statusMap = Map.of( //
+						"media-url", "/podcasts/" + podcast.getUid() + "/output", //
+						"status", this.finishedMessage //
+				);
 			}
 			else {
 				statusMap = Map.of("status", this.processingMessage);
@@ -57,6 +71,37 @@ class PipelineHttpController {
 		});
 		return response.map(reply -> ResponseEntity.ok().body(reply))
 				.orElse(ResponseEntity.noContent().build());
+	}
+
+	@SneakyThrows
+	@GetMapping("/podcasts/{uid}/output")
+	ResponseEntity<InputStreamResource> getOutputMedia(@PathVariable String uid) {
+		return this.podcastRepository //
+				.findByUid(uid)//
+				.map(Podcast::getS3OutputFileName) //
+				.map(s3Key -> new Object() {
+					S3Object object = s3.downloadOutputFile(s3Key);
+
+					String key = s3Key;
+
+				})//
+				.map(record -> this.doDownloadFile(record.object, uid, record.key)) //
+				.orElseThrow(() -> new IllegalArgumentException(
+						"couldn't find the Podcast associated with UID  " + uid));
+	}
+
+	@SneakyThrows
+	private ResponseEntity<InputStreamResource> doDownloadFile(S3Object object,
+			String uid, String key) {
+		var objectMetadata = object.getObjectMetadata();
+		var inputStream = object.getObjectContent();
+		var inputStreamResource = new InputStreamResource(inputStream);
+
+		return ResponseEntity.ok().header("X-Podcast-Uid", uid)
+				.contentType(this.mediaContentType)
+				.header(HttpHeaders.CONTENT_DISPOSITION,
+						"attachment; filename=\"" + key + "\"")
+				.body(inputStreamResource);
 	}
 
 	@PostMapping("/podcasts/{uid}")

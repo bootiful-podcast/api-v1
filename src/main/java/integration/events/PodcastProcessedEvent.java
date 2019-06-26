@@ -11,7 +11,7 @@ public class PodcastProcessedEvent extends ApplicationEvent {
 	private final String uid, bucketName, fileName;
 
 	public PodcastProcessedEvent(String uid, String bucketName, String fileName) {
-		super(Map.of("uid", uid, "bucketName", bucketName, "fileName", fileName));
+		super(Map.of("uid", uid, "inputBucketName", bucketName, "fileName", fileName));
 		this.bucketName = bucketName;
 		this.uid = uid;
 		this.fileName = fileName;

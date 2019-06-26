@@ -17,7 +17,9 @@ class AwsConfiguration {
 
 	@Bean
 	AwsS3Service awsS3Service(PipelineProperties properties, AmazonS3 s3) {
-		return new AwsS3Service(properties.getS3().getBucketName(), s3);
+		var s3Properties = properties.getS3();
+		return new AwsS3Service(s3Properties.getInputBucketName(),
+				s3Properties.getOutputBucketName(), s3);
 	}
 
 	@Bean
