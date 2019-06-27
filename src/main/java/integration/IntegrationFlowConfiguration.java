@@ -200,7 +200,8 @@ class IntegrationFlowConfiguration {
 							resultMap.getOrDefault("wav", null));
 					var uid = resultMap.get("uid");
 					var outputBucketName = resultMap.get("output-bucket-name");
-					this.recordProcessedFilesToDatabase(uid, outputBucketName, outputFileExtension);
+					this.recordProcessedFilesToDatabase(uid, outputBucketName,
+						outputFileExtension);
 					return null;
 				}).get();
 	}
