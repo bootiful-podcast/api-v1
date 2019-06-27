@@ -33,6 +33,21 @@ public class Podcast {
 
 	private Date date = new Date();
 
+	@Override
+	public String toString() {
+		return "Podcast{" +
+			"id=" + id +
+			", uid='" + uid + '\'' +
+			", title='" + title + '\'' +
+			", description='" + description + '\'' +
+			", notes='" + notes + '\'' +
+			", transcript='" + transcript + '\'' +
+			", mediaS3Uri='" + mediaS3Uri + '\'' +
+			", s3OutputFileName='" + s3OutputFileName + '\'' +
+			", date=" + date +
+			'}';
+	}
+
 	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	@JoinTable(name = "podcast_link", joinColumns = @JoinColumn(name = "podcast_id"),
 			inverseJoinColumns = @JoinColumn(name = "link_id"))
