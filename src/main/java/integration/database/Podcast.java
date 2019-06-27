@@ -36,10 +36,10 @@ public class Podcast {
 	@Override
 	public String toString() {
 		return "Podcast{" + "id=" + id + ", uid='" + uid + '\'' + ", title='" + title
-			+ '\'' + ", description='" + description + '\'' + ", notes='" + notes
-			+ '\'' + ", transcript='" + transcript + '\'' + ", mediaS3Uri='"
-			+ mediaS3Uri + '\'' + ", s3OutputFileName='" + s3OutputFileName + '\''
-			+ ", date=" + date + '}';
+				+ '\'' + ", description='" + description + '\'' + ", notes='" + notes
+				+ '\'' + ", transcript='" + transcript + '\'' + ", mediaS3Uri='"
+				+ mediaS3Uri + '\'' + ", s3OutputFileName='" + s3OutputFileName + '\''
+				+ ", date=" + date + '}';
 	}
 
 	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })

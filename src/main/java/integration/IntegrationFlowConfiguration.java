@@ -201,7 +201,7 @@ class IntegrationFlowConfiguration {
 					var uid = resultMap.get("uid");
 					var outputBucketName = resultMap.get("output-bucket-name");
 					this.recordProcessedFilesToDatabase(uid, outputBucketName,
-						outputFileExtension);
+							outputFileExtension);
 					return null;
 				}).get();
 	}
@@ -211,7 +211,7 @@ class IntegrationFlowConfiguration {
 	}
 
 	private void recordProcessedFilesToDatabase(String uid, String outputBucketName,
-																																													String fn) {
+			String fn) {
 		var event = new PodcastProcessedEvent(uid, outputBucketName, fn);
 		this.publisher.publishEvent(event);
 	}
