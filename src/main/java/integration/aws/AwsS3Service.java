@@ -52,12 +52,12 @@ public class AwsS3Service {
 			objectMetadata.setContentType(contentType);
 			objectMetadata.setContentLength(file.length());
 			var request = new PutObjectRequest(this.uploadBucketName
-				+ (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder),
-				file.getName(), file);
+					+ (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder),
+					file.getName(), file);
 			var putObjectResult = this.s3.putObject(request);
 			Assert.notNull(putObjectResult, "the S3 file hasn't been uploaded");
 			return this.createS3Uri(this.uploadBucketName, nestedBucketFolder,
-				file.getName());
+					file.getName());
 		}
 		return null;
 	}

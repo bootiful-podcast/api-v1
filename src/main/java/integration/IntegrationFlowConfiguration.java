@@ -114,8 +114,8 @@ class IntegrationFlowConfiguration {
 			var s3Path = retryTemplate.execute(context -> {
 
 				log.info("trying to upload " + file.getAbsolutePath()
-					+ " with content-type " + contentType + " with UID " + uid
-					+ ", attempt #" + context.getRetryCount());
+						+ " with content-type " + contentType + " with UID " + uid
+						+ ", attempt #" + context.getRetryCount());
 
 				return s3.upload(contentType, uid, file);
 			});
@@ -158,7 +158,7 @@ class IntegrationFlowConfiguration {
 	}
 
 	private static void establishHeaderIfMatches(Map<String, String> request,
-																																														Message<?> msg, String header, String newKey) {
+			Message<?> msg, String header, String newKey) {
 		if (isTrue(msg.getHeaders(), header)) {
 			request.put(newKey, msg.getHeaders().get(S3_PATH, String.class));
 		}
@@ -211,8 +211,8 @@ class IntegrationFlowConfiguration {
 	}
 
 	private void recordProcessedFilesToDatabase(String uid, String outputBucketName,
-			String fileName) {
-		var event = new PodcastProcessedEvent(uid, outputBucketName, fileName);
+			String ext) {
+		var event = new PodcastProcessedEvent(uid, outputBucketName, ext);
 		this.publisher.publishEvent(event);
 	}
 
@@ -222,17 +222,17 @@ class IntegrationFlowConfiguration {
 		var processorConfig = properties.getProcessor();
 
 		helper.defineDestination(processorConfig.getRequestsExchange(),
-			processorConfig.getRequestsQueue(),
-			processorConfig.getRequestsRoutingKey());
+				processorConfig.getRequestsQueue(),
+				processorConfig.getRequestsRoutingKey());
 
 		helper.defineDestination(processorConfig.getRepliesExchange(),
-			processorConfig.getRepliesQueue(),
-			processorConfig.getRepliesRoutingKey());
+				processorConfig.getRepliesQueue(),
+				processorConfig.getRepliesRoutingKey());
 
 		return IntegrationFlows//
-			.from(apiToPipelineChannel()) //
-			.split(File.class, this.unzipSplitter) //
-			.channel(concurrentQueue()).get();
+				.from(apiToPipelineChannel()) //
+				.split(File.class, this.unzipSplitter) //
+				.channel(concurrentQueue()).get();
 	}
 
 	@Bean
@@ -240,16 +240,16 @@ class IntegrationFlowConfiguration {
 
 		var processorConfig = properties.getProcessor();
 		var processorOutboundAdapter = Amqp //
-			.outboundAdapter(template)//
-			.exchangeName(processorConfig.getRequestsExchange()) //
-			.routingKey(processorConfig.getRequestsRoutingKey());
+				.outboundAdapter(template)//
+				.exchangeName(processorConfig.getRequestsExchange()) //
+				.routingKey(processorConfig.getRequestsRoutingKey());
 		return IntegrationFlows //
-			.from(concurrentQueue())//
-			.handle(File.class, this.s3UploadHandler) //
-			.aggregate(this.aggregator) //
-			.handle(Map.class, this.rmqProcessorAggregateArtifactsTransformer)//
-			.handle(processorOutboundAdapter)//
-			.get();
+				.from(concurrentQueue())//
+				.handle(File.class, this.s3UploadHandler) //
+				.aggregate(this.aggregator) //
+				.handle(Map.class, this.rmqProcessorAggregateArtifactsTransformer)//
+				.handle(processorOutboundAdapter)//
+				.get();
 	}
 
 	@Bean

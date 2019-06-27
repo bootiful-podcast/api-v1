@@ -32,12 +32,12 @@ class AwsConfiguration {
 		var credentials = new BasicAWSCredentials(accessKey, secret);
 		var timeout = 5 * 60 * 1000;
 		var clientConfiguration = new ClientConfiguration()
-			.withClientExecutionTimeout(timeout).withConnectionMaxIdleMillis(timeout)
-			.withConnectionTimeout(timeout).withConnectionTTL(timeout)
-			.withRequestTimeout(timeout);
+				.withClientExecutionTimeout(timeout).withConnectionMaxIdleMillis(timeout)
+				.withConnectionTimeout(timeout).withConnectionTTL(timeout)
+				.withRequestTimeout(timeout);
 
 		return AmazonS3ClientBuilder.standard()
-			.withClientConfiguration(clientConfiguration)
+				.withClientConfiguration(clientConfiguration)
 				.withCredentials(new AWSStaticCredentialsProvider(credentials))
 				.withRegion(Regions.fromName(region)).build();
 	}

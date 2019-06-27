@@ -10,11 +10,11 @@ public class PodcastProcessedEvent extends ApplicationEvent {
 
 	private final String uid, bucketName, fileName;
 
-	public PodcastProcessedEvent(String uid, String bucketName, String fileName) {
-		super(Map.of("uid", uid, "inputBucketName", bucketName, "fileName", fileName));
+	public PodcastProcessedEvent(String uid, String bucketName, String ext) {
+		super(Map.of("uid", uid, "inputBucketName", bucketName, "extension", ext));
 		this.bucketName = bucketName;
 		this.uid = uid;
-		this.fileName = fileName;
+		this.fileName = uid + '.' + ext;
 	}
 
 }
