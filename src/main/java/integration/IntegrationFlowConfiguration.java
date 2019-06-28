@@ -86,7 +86,6 @@ class IntegrationFlowConfiguration {
 						.withPayload(f)//
 						.setHeader(CONTENT_TYPE, determineContentTypeFor(f))//
 						.setHeader(PACKAGE_MANIFEST, uploadPackageManifest);
-
 				uploadPackageManifest.getMedia().forEach(media -> {
 					var interview = f.getName().contains(media.getInterview());
 					var intro = f.getName().contains(media.getIntroduction());
