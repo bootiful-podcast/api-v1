@@ -193,8 +193,7 @@ class IntegrationFlowConfiguration {
 		@Value("${podcast.notifications.from-email}") String from,
 		@Value("${podcast.notifications.to-email}") String to,
 		@Value("${podcast.notifications.subject}") String subject,
-		ConnectionFactory connectionFactory,
-		NotificationService emailer) {
+		ConnectionFactory connectionFactory, NotificationService emailer) {
 		var repliesQueue = properties.getProcessor().getRepliesQueue();
 		var amqpInboundAdapter = Amqp //
 			.inboundAdapter(connectionFactory, repliesQueue) //
@@ -215,19 +214,22 @@ class IntegrationFlowConfiguration {
 			}) //
 			.handle((GenericHandler<Map<String, String>>) (payload, headers) -> {
 				var uid = payload.get("uid");
-				var data = Map.<String, Object>of(
-					"description", (String) payload.get("description"), //
+				var data = Map.<String, Object>of("description",
+					(String) payload.get("description"), //
 					"", (String) ""
 
 				);
 				var content = emailer.render("/templates/file-uploaded.ftl", data);
-				var response = emailer.send(new Email(to), new Email(from), subject, content);
-				Assert.isTrue(HttpStatus.valueOf(response.getStatusCode()).is2xxSuccessful(), "tried to send an email and we " +
-					"got back a non-positive status code.");
+				var response = emailer.send(new Email(to), new Email(from), subject,
+					content);
+				Assert.isTrue(
+					HttpStatus.valueOf(response.getStatusCode())
+						.is2xxSuccessful(),
+					"tried to send an email and we "
+						+ "got back a non-positive status code.");
 
 				return null;
-			})
-			.get();
+			}).get();
 	}
 
 	private void recordUploadPackageManifest(PodcastPackageManifest packageManifest) {

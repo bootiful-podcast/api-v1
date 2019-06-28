@@ -8,4 +8,5 @@ import java.net.URI;
 public interface ServerUriResolver {
 
 	URI resolveCurrentRootUri() throws Exception;
+
 }

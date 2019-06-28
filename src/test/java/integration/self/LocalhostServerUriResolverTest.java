@@ -19,10 +19,10 @@ class LocalhostServerUriResolverTest {
 	@Test
 	void resolve() throws Exception {
 
+		var port = 8080;
 		var mock = Mockito.mock(WebServerApplicationContext.class);
 		var mockWs = Mockito.mock(WebServer.class);
 		Mockito.when(mock.getWebServer()).thenReturn(mockWs);
-		var port = 8080;
 		Mockito.when(mockWs.getPort()).thenReturn(port);
 
 		var event = new WebServerInitializedEvent(mockWs) {

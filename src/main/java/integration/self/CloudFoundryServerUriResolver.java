@@ -12,4 +12,5 @@ class CloudFoundryServerUriResolver implements ServerUriResolver {
 	public URI resolveCurrentRootUri() throws Exception {
 		return null;
 	}
+
 }

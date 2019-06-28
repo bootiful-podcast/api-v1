@@ -13,10 +13,11 @@ import java.net.URI;
 @Component
 @Log4j2
 @Profile("default")
-class LocalhostServerUriResolver implements ServerUriResolver,
-	ApplicationListener<WebServerInitializedEvent> {
+class LocalhostServerUriResolver
+	implements ServerUriResolver, ApplicationListener<WebServerInitializedEvent> {
 
 	private int port;
+
 	private String host;
 
 	@Override
@@ -37,4 +38,5 @@ class LocalhostServerUriResolver implements ServerUriResolver,
 	public URI resolveCurrentRootUri() throws Exception {
 		return URI.create("http://" + this.host + ':' + this.port);
 	}
+
 }
