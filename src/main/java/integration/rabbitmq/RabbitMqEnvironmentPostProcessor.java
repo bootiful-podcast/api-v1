@@ -14,16 +14,24 @@ import java.util.HashMap;
 class RabbitMqEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
 	@Override
-	public void postProcessEnvironment(ConfigurableEnvironment environment,
+	public void postProcessEnvironment(ConfigurableEnvironment env,
 			SpringApplication application) {
 
-		var rmqAddress = System.getenv("RMQ_ADDRESS");
-		log.debug("RMQ_ADDRESS: " + rmqAddress);
-		if (!StringUtils.hasText(rmqAddress))
+		var configurationKey = "rmq.address";
+		var envVariable = "RMQ_ADDRESS";
+		var resolvedEnvironmentProperty = System.getenv(envVariable);
+		var resolvedConfigurationProperty = env.getProperty(configurationKey);
+		var rmqAddress = StringUtils.hasText(resolvedEnvironmentProperty)
+				? resolvedEnvironmentProperty
+				: (StringUtils.hasText(resolvedConfigurationProperty)
+						? resolvedConfigurationProperty : null);
+
+		log.debug("RMQ_ADDRESS: " + rmqAddress
+				+ ". Detected RMQ_ADDRESS environment variable");
+
+		if (!StringUtils.hasText(rmqAddress)) {
 			return;
-
-		log.info("detected RMQ_ADDRESS environment variable");
-
+		}
 		var uri = URI.create(rmqAddress);
 		var userInfo = uri.getUserInfo();
 		var vhost = uri.getPath();
@@ -75,7 +83,7 @@ class RabbitMqEnvironmentPostProcessor implements EnvironmentPostProcessor {
 			}
 		};
 
-		environment.getPropertySources().addLast(propertySource);
+		env.getPropertySources().addLast(propertySource);
 	}
 
 }

@@ -5,7 +5,7 @@ import integration.aws.AwsS3Service;
 import integration.events.PodcastArchiveUploadedEvent;
 import integration.events.PodcastArtifactsUploadedToProcessorEvent;
 import integration.events.PodcastProcessedEvent;
-import integration.rabbitmq.RabbitHelper;
+import integration.rabbitmq.RabbitMqHelper;
 import integration.utils.FileUtils;
 import integration.utils.JsonHelper;
 import integration.utils.UnzipUtils;
@@ -217,7 +217,7 @@ class IntegrationFlowConfiguration {
 	}
 
 	@Bean
-	IntegrationFlow audioProcessorPreparationPipeline(RabbitHelper helper) {
+	IntegrationFlow audioProcessorPreparationPipeline(RabbitMqHelper helper) {
 
 		var processorConfig = properties.getProcessor();
 

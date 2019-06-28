@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class RabbitHelper {
+public class RabbitMqHelper {
 
 	private final AmqpAdmin amqpAdmin;
 
