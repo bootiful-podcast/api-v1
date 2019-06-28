@@ -19,7 +19,7 @@ public class NotificationService {
 
 	private final SendGrid sendGrid;
 
-	private final Locale locale;
+	private final Locale locale = Locale.getDefault();
 
 	@SneakyThrows
 	public String render(Template template, Map<String, Object> dataModel) {

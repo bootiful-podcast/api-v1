@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <body>
+<H1> Ding! Podcast's Done!
+</H1>
 <p>
-    Hello, ${destinationName}. There are still ${bookmarkCount} outstanding CFPs in ${year}.
+    Hello, your produced podcast for ${title} is now ready.
+
+    You can download it <a href="${podcastDownloadUrl}">here</a>.
+
 </P>
-<ol>
-    <#list bookmarks as b>
-        <li>
-            <a href="${b.href}"> ${b.description} </a> <br/>
-            (<span style="font-size: smaller"><a href="${cfpStatusFunctionUrl}?id=${b.hash}"> Mark as Processed </a></span>)
-        </li>
-    </#list>
-</ol>
 </body>
 </html>
