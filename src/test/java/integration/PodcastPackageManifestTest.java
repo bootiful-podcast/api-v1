@@ -16,14 +16,16 @@ class PodcastPackageManifestTest {
 
 	String intro = "oleg-intro.mp3";
 
+	String title = "Josh has a microphone and we don't know why!";
+
 	String description = "Josh talks to some people.";
 
 	String uid = "1143a526-3d70-41ea-8ec5-974a1a0b319f";
 
 	String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
-			+ "<podcast description=\"" + this.description + "\" uid=\"" + this.uid
-			+ "\">\n" + "  <mp3 interview=\"" + this.interview + "\" intro=\""
-			+ this.intro + "\"/>\n" + "</podcast>\n";
+			+ "<podcast title =\"" + this.title + "\" description=\"" + this.description
+			+ "\" uid=\"" + this.uid + "\">\n" + "  <mp3 interview=\"" + this.interview
+			+ "\" intro=\"" + this.intro + "\"/>\n" + "</podcast>\n";
 
 	Charset charset = Charsets.toCharset("UTF-8");
 

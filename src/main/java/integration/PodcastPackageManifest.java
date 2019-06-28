@@ -88,8 +88,8 @@ public class PodcastPackageManifest {
 				"there must be at least one podcast element in a manifest");
 		var attributes = podcast.item(0).getAttributes();
 		build.setDescription(readAttributeFrom("description", attributes));
-		build.setUid(readAttributeFrom("uid", attributes));
 		build.setTitle(readAttributeFrom("title", attributes));
+		build.setUid(readAttributeFrom("uid", attributes));
 		List.of("mp3,wav".split(",")).forEach(
 				ext -> getMediaFromDoc(doc, ext).ifPresent(x -> build.media.add(x)));
 		return build;
