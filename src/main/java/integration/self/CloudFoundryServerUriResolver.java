@@ -16,9 +16,12 @@ import java.util.function.Function;
 class CloudFoundryServerUriResolver implements ServerUriResolver {
 
 	private final ObjectMapper objectMapper;
+
 	private final TypeReference<Map<String, Object>> typeReference = new TypeReference<Map<String, Object>>() {
 	};
+
 	private final String applicationUrisKey = "application_uris";
+
 	private final URI uri;
 
 	CloudFoundryServerUriResolver(ObjectMapper om, String json) {
@@ -26,19 +29,23 @@ class CloudFoundryServerUriResolver implements ServerUriResolver {
 	}
 
 	@SneakyThrows
-	CloudFoundryServerUriResolver(ObjectMapper om, String json, Function<List<String>, String> whichUriToSelect) {
+	CloudFoundryServerUriResolver(ObjectMapper om, String json,
+			Function<List<String>, String> whichUriToSelect) {
 		this.objectMapper = om;
 		Map<String, Object> map = this.objectMapper.readValue(json, this.typeReference);
 		Assert.notNull(map, "the result of reading the JSON must be non-null");
-		Assert.isTrue(map.containsKey(this.applicationUrisKey), "the VCAP_SERVICES environment variable does not contain any routes");
+		Assert.isTrue(map.containsKey(this.applicationUrisKey),
+				"the VCAP_SERVICES environment variable does not contain any routes");
 		var urisRootObject = map.get(this.applicationUrisKey);
-		Assert.isTrue(urisRootObject instanceof Collection, "the attribute must exist and it must be a " + Collection.class.getName());
+		Assert.isTrue(urisRootObject instanceof Collection,
+				"the attribute must exist and it must be a "
+						+ Collection.class.getName());
 		var selection = whichUriToSelect.apply(((List<String>) urisRootObject));
 		this.uri = URI.create(selection);
 	}
 
 	@Override
-	public URI resolveCurrentRootUri()   {
+	public URI resolveCurrentRootUri() {
 		return this.uri;
 	}
 

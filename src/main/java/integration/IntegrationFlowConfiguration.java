@@ -49,18 +49,24 @@ import static integration.Headers.*;
 class IntegrationFlowConfiguration {
 
 	private final PipelineProperties properties;
+
 	private final JsonHelper json;
+
 	private final Function<File, Collection<Message<File>>> unzipSplitter;
+
 	private final GenericHandler<File> s3UploadHandler;
+
 	private final Consumer<AggregatorSpec> aggregator;
+
 	private final GenericHandler<Map> rmqProcessorAggregateArtifactsTransformer;
+
 	private final ApplicationEventPublisher publisher;
+
 	private final PodcastRepository repository;
 
 	IntegrationFlowConfiguration(PipelineProperties properties,
-																														PodcastRepository repository,
-																														JsonHelper jsonService,
-																														AwsS3Service s3, ApplicationEventPublisher publisher) {
+			PodcastRepository repository, JsonHelper jsonService, AwsS3Service s3,
+			ApplicationEventPublisher publisher) {
 		var retryTemplate = new RetryTemplate();
 		this.repository = repository;
 		this.properties = properties;
@@ -68,34 +74,34 @@ class IntegrationFlowConfiguration {
 		this.json = jsonService;
 		this.unzipSplitter = (file) -> {
 			var stagingDirectoryForRequest = FileUtils.ensureDirectoryExists(
-				new File(properties.getS3().getStagingDirectory(),
-					UUID.randomUUID().toString()));
+					new File(properties.getS3().getStagingDirectory(),
+							UUID.randomUUID().toString()));
 
 			var files = UnzipUtils.unzip(file, stagingDirectoryForRequest);
 			var manifest = files.stream()
-				.filter(fn -> fn.getName().toLowerCase().endsWith("manifest.xml"))
-				.collect(Collectors.toList());
+					.filter(fn -> fn.getName().toLowerCase().endsWith("manifest.xml"))
+					.collect(Collectors.toList());
 			Assert.isTrue(manifest.size() > 0,
-				"at least one file must be a manifest.xml file for a package to be considered valid.");
+					"at least one file must be a manifest.xml file for a package to be considered valid.");
 			var manifestFile = manifest.get(0);
 			Assert.notNull(manifest, "the manifest must not be null");
 			var uploadPackageManifest = PodcastPackageManifest.from(manifestFile);
 			recordUploadPackageManifest(uploadPackageManifest);
 			var stream = files.stream().map(f -> {
 				var builder = MessageBuilder//
-					.withPayload(f)//
-					.setHeader(CONTENT_TYPE, determineContentTypeFor(f))//
-					.setHeader(PACKAGE_MANIFEST, uploadPackageManifest);
+						.withPayload(f)//
+						.setHeader(CONTENT_TYPE, determineContentTypeFor(f))//
+						.setHeader(PACKAGE_MANIFEST, uploadPackageManifest);
 				uploadPackageManifest.getMedia().forEach(media -> {
 					var interview = f.getName().contains(media.getInterview());
 					var intro = f.getName().contains(media.getIntroduction());
 					var type = interview ? AssetTypes.TYPE_INTERVIEW
-						: (intro ? AssetTypes.TYPE_INTRODUCTION : null);
+							: (intro ? AssetTypes.TYPE_INTRODUCTION : null);
 					var mediaMap = Map.of( //
-						IS_INTERVIEW_FILE, interview, //
-						IS_INTRODUCTION_FILE, intro, //
-						//
-						ARTIFACT_STAGING_DIRECTORY, stagingDirectoryForRequest //
+							IS_INTERVIEW_FILE, interview, //
+							IS_INTRODUCTION_FILE, intro, //
+							//
+							ARTIFACT_STAGING_DIRECTORY, stagingDirectoryForRequest //
 					);
 					if (StringUtils.hasText(type)) {
 						builder.setHeader(ASSET_TYPE, type);
@@ -110,15 +116,15 @@ class IntegrationFlowConfiguration {
 		this.s3UploadHandler = (file, messageHeaders) -> {
 			var contentType = messageHeaders.get(CONTENT_TYPE, String.class);
 			var manifest = messageHeaders.get(PACKAGE_MANIFEST,
-				PodcastPackageManifest.class);
+					PodcastPackageManifest.class);
 			var uid = manifest.getUid();
 			Assert.notNull(uid, "the UID must not be null");
 			log.info("begin: s3 artifact upload " + file.getAbsolutePath());
 			var s3Path = retryTemplate.execute(context -> {
 
 				log.info("trying to upload " + file.getAbsolutePath()
-					+ " with content-type " + contentType + " with UID " + uid
-					+ ", attempt #" + context.getRetryCount());
+						+ " with content-type " + contentType + " with UID " + uid
+						+ ", attempt #" + context.getRetryCount());
 
 				return s3.upload(contentType, uid, file);
 			});
@@ -128,11 +134,11 @@ class IntegrationFlowConfiguration {
 			log.info("the s3 path is " + s3Path);
 			var uriAsString = s3Path.toString();
 			publisher.publishEvent(new PodcastArtifactsUploadedToProcessorEvent(uid, role,
-				uriAsString, file));
+					uriAsString, file));
 			return MessageBuilder //
-				.withPayload(file) //
-				.setHeader(S3_PATH, uriAsString) //
-				.build();
+					.withPayload(file) //
+					.setHeader(S3_PATH, uriAsString) //
+					.build();
 		};
 
 		this.aggregator = spec -> spec.outputProcessor(group -> {
@@ -140,11 +146,11 @@ class IntegrationFlowConfiguration {
 			var request = new HashMap<String, String>();
 			messages.forEach(msg -> {
 				establishHeaderIfMatches(request, msg, IS_INTRODUCTION_FILE,
-					PROCESSOR_REQUEST_INTRODUCTION);
+						PROCESSOR_REQUEST_INTRODUCTION);
 				establishHeaderIfMatches(request, msg, IS_INTERVIEW_FILE,
-					PROCESSOR_REQUEST_INTERVIEW);
+						PROCESSOR_REQUEST_INTERVIEW);
 				var manifest = msg.getHeaders().get(PACKAGE_MANIFEST,
-					PodcastPackageManifest.class);
+						PodcastPackageManifest.class);
 				var uid = Objects.requireNonNull(manifest).getUid();
 				request.put("uid", uid);
 			});
@@ -155,13 +161,13 @@ class IntegrationFlowConfiguration {
 			var json = jsonService.toJson(payload);
 			var builder = MessageBuilder.withPayload(json);
 			Set.of(UID, PROCESSOR_REQUEST_INTERVIEW, PROCESSOR_REQUEST_INTRODUCTION)
-				.forEach(header -> builder.setHeader(header, payload.get(header)));
+					.forEach(header -> builder.setHeader(header, payload.get(header)));
 			return builder.build();
 		};
 	}
 
 	private static void establishHeaderIfMatches(Map<String, String> request,
-																																														Message<?> msg, String header, String newKey) {
+			Message<?> msg, String header, String newKey) {
 		if (isTrue(msg.getHeaders(), header)) {
 			request.put(newKey, msg.getHeaders().get(S3_PATH, String.class));
 		}
@@ -170,9 +176,9 @@ class IntegrationFlowConfiguration {
 	private static String determineContentTypeFor(File file) {
 		Assert.notNull(file, "the file must not be null");
 		var map = Map.of(//
-			"wav", "audio/wav", //
-			"mp3", "audio/mp3", //
-			"xml", "application/xml" //
+				"wav", "audio/wav", //
+				"mp3", "audio/mp3", //
+				"xml", "application/xml" //
 		);
 		var fn = file.getName().toLowerCase();
 		for (var ext : map.keySet()) {
@@ -188,67 +194,68 @@ class IntegrationFlowConfiguration {
 	}
 
 	@Bean
-	IntegrationFlow audioProcessorReplyPipeline(
-		ServerUriResolver resolver,
-		@Value("${podcast.notifications.from-email}") String from,
-		@Value("${podcast.notifications.to-email}") String to,
-		@Value("${podcast.notifications.subject}") String subject,
-		ConnectionFactory connectionFactory,
-		NotificationService emailer) {
+	IntegrationFlow audioProcessorReplyPipeline(ServerUriResolver resolver,
+			@Value("${podcast.notifications.from-email}") String from,
+			@Value("${podcast.notifications.to-email}") String to,
+			@Value("${podcast.notifications.subject}") String subject,
+			ConnectionFactory connectionFactory, NotificationService emailer) {
 
 		var repliesQueue = properties.getProcessor().getRepliesQueue();
 		var amqpInboundAdapter = Amqp //
-			.inboundAdapter(connectionFactory, repliesQueue) //
-			.get();
+				.inboundAdapter(connectionFactory, repliesQueue) //
+				.get();
 
 		var outputFileKey = "output-file";
 
 		return IntegrationFlows //
-			.from(amqpInboundAdapter) //
-			.handle(String.class, (payload, headers) -> {
-				var reference = new TypeReference<Map<String, String>>() {
-				};
-				var resultMap = json.fromJson(payload, reference);
-				var outputFile = resultMap.getOrDefault("mp3",
-					resultMap.getOrDefault("wav", null));
-				var uid = resultMap.get("uid");
-				resultMap.put(outputFileKey, outputFile);
-				var outputBucketName = resultMap.get("output-bucket-name");
-				this.recordProcessedFilesToDatabase(uid, outputBucketName,
-					outputFile);
-				return resultMap;
-			}) //
-			.handle((GenericHandler<Map<String, String>>) (payload, headers) -> {
+				.from(amqpInboundAdapter) //
+				.handle(String.class, (payload, headers) -> {
+					var reference = new TypeReference<Map<String, String>>() {
+					};
+					var resultMap = json.fromJson(payload, reference);
+					var outputFile = resultMap.getOrDefault("mp3",
+							resultMap.getOrDefault("wav", null));
+					var uid = resultMap.get("uid");
+					resultMap.put(outputFileKey, outputFile);
+					var outputBucketName = resultMap.get("output-bucket-name");
+					this.recordProcessedFilesToDatabase(uid, outputBucketName,
+							outputFile);
+					return resultMap;
+				}) //
+				.handle((GenericHandler<Map<String, String>>) (payload, headers) -> {
 
-				var uid = payload.get("uid");
-				repository.findByUid(uid).ifPresent(podcast -> {
-					var data = Map.<String, Object>of(//
-						"uid", uid, //
-						"title", podcast.getTitle(),//
-						"server-uri", resolver.resolveCurrentRootUri().toString(),//
-						"output-media-uri", "http://" + resolver.resolveCurrentRootUri().toString() + payload.get(outputFileKey)
-					);
+					var uid = payload.get("uid");
+					repository.findByUid(uid).ifPresent(podcast -> {
+						var data = Map.<String, Object>of(//
+								"uid", uid, //
+								"title", podcast.getTitle(), //
+								"server-uri", resolver.resolveCurrentRootUri().toString(), //
+								"output-media-uri",
+								"http://" + resolver.resolveCurrentRootUri().toString()
+										+ payload.get(outputFileKey));
 
-					log.info("sending the following data into the template: " + data);
+						log.info("sending the following data into the template: " + data);
 
-					var content = emailer.render("/templates/file-uploaded.ftl", data);
-					var response = emailer
-						.send(new Email(to), new Email(from), subject, content);
-					var xxSuccessful = HttpStatus.valueOf(response.getStatusCode()).is2xxSuccessful();
-					Assert.isTrue(xxSuccessful,
-						"tried to send an email and we got back a non-positive status code.");
-				});
+						var content = emailer.render("/templates/file-uploaded.ftl",
+								data);
+						var response = emailer.send(new Email(to), new Email(from),
+								subject, content);
+						var xxSuccessful = HttpStatus.valueOf(response.getStatusCode())
+								.is2xxSuccessful();
+						Assert.isTrue(xxSuccessful,
+								"tried to send an email and we got back a non-positive status code.");
+					});
 
-				return null;
-			}).get();
+					return null;
+				}).get();
 	}
 
 	private void recordUploadPackageManifest(PodcastPackageManifest packageManifest) {
 		this.publisher.publishEvent(new PodcastArchiveUploadedEvent(packageManifest));
 	}
 
-	private void recordProcessedFilesToDatabase(
-		String uid, String outputBucketName, String fn) {
+	private void recordProcessedFilesToDatabase(String uid, String outputBucketName,
+			String fn) {
 		var event = new PodcastProcessedEvent(uid, outputBucketName, fn);
 		this.publisher.publishEvent(event);
 	}
@@ -259,17 +266,17 @@ class IntegrationFlowConfiguration {
 		var processorConfig = properties.getProcessor();
 
 		helper.defineDestination(processorConfig.getRequestsExchange(),
-			processorConfig.getRequestsQueue(),
-			processorConfig.getRequestsRoutingKey());
+				processorConfig.getRequestsQueue(),
+				processorConfig.getRequestsRoutingKey());
 
 		helper.defineDestination(processorConfig.getRepliesExchange(),
-			processorConfig.getRepliesQueue(),
-			processorConfig.getRepliesRoutingKey());
+				processorConfig.getRepliesQueue(),
+				processorConfig.getRepliesRoutingKey());
 
 		return IntegrationFlows//
-			.from(apiToPipelineChannel()) //
-			.split(File.class, this.unzipSplitter) //
-			.channel(concurrentQueue()).get();
+				.from(apiToPipelineChannel()) //
+				.split(File.class, this.unzipSplitter) //
+				.channel(concurrentQueue()).get();
 	}
 
 	@Bean
@@ -277,16 +284,16 @@ class IntegrationFlowConfiguration {
 
 		var processorConfig = properties.getProcessor();
 		var processorOutboundAdapter = Amqp //
-			.outboundAdapter(template)//
-			.exchangeName(processorConfig.getRequestsExchange()) //
-			.routingKey(processorConfig.getRequestsRoutingKey());
+				.outboundAdapter(template)//
+				.exchangeName(processorConfig.getRequestsExchange()) //
+				.routingKey(processorConfig.getRequestsRoutingKey());
 		return IntegrationFlows //
-			.from(concurrentQueue())//
-			.handle(File.class, this.s3UploadHandler) //
-			.aggregate(this.aggregator) //
-			.handle(Map.class, this.rmqProcessorAggregateArtifactsTransformer)//
-			.handle(processorOutboundAdapter)//
-			.get();
+				.from(concurrentQueue())//
+				.handle(File.class, this.s3UploadHandler) //
+				.aggregate(this.aggregator) //
+				.handle(Map.class, this.rmqProcessorAggregateArtifactsTransformer)//
+				.handle(processorOutboundAdapter)//
+				.get();
 	}
 
 	@Bean

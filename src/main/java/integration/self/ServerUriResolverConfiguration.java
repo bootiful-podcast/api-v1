@@ -19,4 +19,5 @@ class ServerUriResolverConfiguration {
 	CloudFoundryServerUriResolver cloudFoundryServerUriResolver(ObjectMapper om) {
 		return new CloudFoundryServerUriResolver(om, System.getenv("VCAP_APPLICATION"));
 	}
+
 }

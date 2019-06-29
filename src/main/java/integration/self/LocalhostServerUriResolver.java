@@ -10,7 +10,7 @@ import java.net.URI;
 
 @Log4j2
 class LocalhostServerUriResolver
-	implements ServerUriResolver, ApplicationListener<WebServerInitializedEvent> {
+		implements ServerUriResolver, ApplicationListener<WebServerInitializedEvent> {
 
 	private int port;
 

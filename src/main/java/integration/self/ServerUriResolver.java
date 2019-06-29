@@ -7,6 +7,6 @@ import java.net.URI;
  */
 public interface ServerUriResolver {
 
-	URI resolveCurrentRootUri()  ;
+	URI resolveCurrentRootUri();
 
 }
