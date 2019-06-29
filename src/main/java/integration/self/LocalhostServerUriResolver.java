@@ -9,7 +9,7 @@ import java.net.InetAddress;
 import java.net.URI;
 
 @Log4j2
-class LocalhostServerUriResolver
+class LocalhostServerUriResolver extends AbstractServerUriResolver
 		implements ServerUriResolver, ApplicationListener<WebServerInitializedEvent> {
 
 	private int port;
@@ -19,20 +19,14 @@ class LocalhostServerUriResolver
 	@Override
 	@SneakyThrows
 	public void onApplicationEvent(WebServerInitializedEvent event) {
-		int port = event.getWebServer().getPort();
 		var localHost = InetAddress.getLocalHost();
-		var host = localHost.getHostName();
-		initialize(host, port);
-	}
-
-	private void initialize(String host, int port) {
-		this.host = host;
-		this.port = port;
+		this.host = localHost.getHostName();
+		this.port = event.getWebServer().getPort();
 	}
 
 	@Override
 	public URI resolveCurrentRootUri() {
-		return URI.create("http://" + this.host + ':' + this.port);
+		return this.buildUriFor(this.host + ':' + this.port);
 	}
 
 }

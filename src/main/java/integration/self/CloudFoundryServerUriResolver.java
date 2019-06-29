@@ -13,7 +13,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Log4j2
-class CloudFoundryServerUriResolver implements ServerUriResolver {
+class CloudFoundryServerUriResolver extends AbstractServerUriResolver
+		implements ServerUriResolver {
 
 	private final ObjectMapper objectMapper;
 
@@ -41,7 +42,7 @@ class CloudFoundryServerUriResolver implements ServerUriResolver {
 				"the attribute must exist and it must be a "
 						+ Collection.class.getName());
 		var selection = whichUriToSelect.apply(((List<String>) urisRootObject));
-		this.uri = URI.create(selection);
+		this.uri = this.buildUriFor(selection);
 	}
 
 	@Override

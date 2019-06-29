@@ -194,7 +194,7 @@ class IntegrationFlowConfiguration {
 	}
 
 	@Bean
-	IntegrationFlow audioProcessorReplyPipeline(ServerUriResolver resolver,
+	IntegrationFlow audioProcessorReplyPipeline(PipelineService service,
 			@Value("${podcast.notifications.from-email}") String from,
 			@Value("${podcast.notifications.to-email}") String to,
 			@Value("${podcast.notifications.subject}") String subject,
@@ -229,15 +229,14 @@ class IntegrationFlowConfiguration {
 						var data = Map.<String, Object>of(//
 								"uid", uid, //
 								"title", podcast.getTitle(), //
-								"server-uri", resolver.resolveCurrentRootUri().toString(), //
-								"output-media-uri",
-								"http://" + resolver.resolveCurrentRootUri().toString()
-										+ payload.get(outputFileKey));
+								"outputMediaUri",
+								service.buildMediaUriForPodcastById(podcast.getId())
+										.toString());
 
 						log.info("sending the following data into the template: " + data);
 
-						var content = emailer.render("/templates/file-uploaded.ftl",
-								data);
+						var fileUploadedTemplate = "file-uploaded.ftl";
+						var content = emailer.render(fileUploadedTemplate, data);
 						var response = emailer.send(new Email(to), new Email(from),
 								subject, content);
 						var xxSuccessful = HttpStatus.valueOf(response.getStatusCode())

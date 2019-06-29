@@ -53,7 +53,8 @@ class PipelineHttpController {
 			Map<String, String> statusMap;
 			if (null != podcast.getMediaS3Uri()) {
 				statusMap = Map.of( //
-						"media-url", "/podcasts/" + podcast.getUid() + "/output", //
+						"media-url",
+						service.buildMediaUriForPodcastById(podcast.getId()).toString(), //
 						"status", this.finishedMessage //
 				);
 			}
