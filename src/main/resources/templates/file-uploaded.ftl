@@ -5,9 +5,7 @@
 </H1>
 <p>
     Hello, your produced podcast for ${title} is now ready.
-
-    You can download it <a href="${podcastDownloadUrl}">here</a>.
-
+    You can download it <a href="${output-media-uri}">here</a>.
 </P>
 </body>
 </html>

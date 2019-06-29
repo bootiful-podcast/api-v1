@@ -4,17 +4,13 @@ import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
 import java.net.URI;
 
-@Component
 @Log4j2
-@Profile("default")
 class LocalhostServerUriResolver
-		implements ServerUriResolver, ApplicationListener<WebServerInitializedEvent> {
+	implements ServerUriResolver, ApplicationListener<WebServerInitializedEvent> {
 
 	private int port;
 
@@ -35,7 +31,7 @@ class LocalhostServerUriResolver
 	}
 
 	@Override
-	public URI resolveCurrentRootUri() throws Exception {
+	public URI resolveCurrentRootUri() {
 		return URI.create("http://" + this.host + ':' + this.port);
 	}
 
