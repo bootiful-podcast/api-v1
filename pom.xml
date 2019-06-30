@@ -10,7 +10,7 @@
         <relativePath/>
     </parent>
     <groupId>fm.bootifulpodcast</groupId>
-    <artifactId>service</artifactId>
+    <artifactId>api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <properties>
         <aws-java-sdk.version>1.11.567</aws-java-sdk.version>
