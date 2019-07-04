@@ -11,10 +11,10 @@ import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 @EnableConfigurationProperties(PipelineProperties.class)
-public class PipelineApplication {
+public class ApiApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(PipelineApplication.class, args);
+		SpringApplication.run(ApiApplication.class, args);
 	}
 
 	@Bean
