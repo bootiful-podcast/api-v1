@@ -10,7 +10,7 @@ applications:
       - bootiful-podcast-db
     routes:
       - route: bootiful-podcast-api.cfapps.io
-      - route: api.bootifulpodcasts.fm
+#      - route: api.bootifulpodcasts.fm
     env:
       SPRING_PROFILES_ACTIVE: cloud
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+}}'
