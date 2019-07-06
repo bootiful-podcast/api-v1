@@ -76,7 +76,6 @@ class IntegrationFlowConfiguration {
 			var stagingDirectoryForRequest = FileUtils.ensureDirectoryExists(
 					new File(properties.getS3().getStagingDirectory(),
 							UUID.randomUUID().toString()));
-
 			var files = UnzipUtils.unzip(file, stagingDirectoryForRequest);
 			var manifest = files.stream()
 					.filter(fn -> fn.getName().toLowerCase().endsWith("manifest.xml"))

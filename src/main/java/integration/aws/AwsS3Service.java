@@ -80,7 +80,7 @@ public class AwsS3Service {
 					+ bucket);
 			return null;
 		}
-		return String.format("https://%s.s3.amazonaws.com/%s", bucket, key);
+		return String.format("s3://%s/%s", bucket, key);
 	}
 
 }
