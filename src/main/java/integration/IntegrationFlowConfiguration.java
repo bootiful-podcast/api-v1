@@ -9,7 +9,6 @@ import integration.events.PodcastArchiveUploadedEvent;
 import integration.events.PodcastArtifactsUploadedToProcessorEvent;
 import integration.events.PodcastProcessedEvent;
 import integration.rabbitmq.RabbitMqHelper;
-import integration.self.ServerUriResolver;
 import integration.utils.FileUtils;
 import integration.utils.JsonHelper;
 import integration.utils.UnzipUtils;
@@ -67,11 +66,14 @@ class IntegrationFlowConfiguration {
 	IntegrationFlowConfiguration(PipelineProperties properties,
 			PodcastRepository repository, JsonHelper jsonService, AwsS3Service s3,
 			ApplicationEventPublisher publisher) {
+
 		var retryTemplate = new RetryTemplate();
+
 		this.repository = repository;
 		this.properties = properties;
 		this.publisher = publisher;
 		this.json = jsonService;
+
 		this.unzipSplitter = (file) -> {
 			var stagingDirectoryForRequest = FileUtils.ensureDirectoryExists(
 					new File(properties.getS3().getStagingDirectory(),
@@ -114,17 +116,15 @@ class IntegrationFlowConfiguration {
 
 		this.s3UploadHandler = (file, messageHeaders) -> {
 			var contentType = messageHeaders.get(CONTENT_TYPE, String.class);
-			var manifest = messageHeaders.get(PACKAGE_MANIFEST,
-					PodcastPackageManifest.class);
+			var manifest = Objects.requireNonNull(
+					messageHeaders.get(PACKAGE_MANIFEST, PodcastPackageManifest.class));
 			var uid = manifest.getUid();
 			Assert.notNull(uid, "the UID must not be null");
 			log.info("begin: s3 artifact upload " + file.getAbsolutePath());
 			var s3Path = retryTemplate.execute(context -> {
-
 				log.info("trying to upload " + file.getAbsolutePath()
 						+ " with content-type " + contentType + " with UID " + uid
 						+ ", attempt #" + context.getRetryCount());
-
 				return s3.upload(contentType, uid, file);
 			});
 			log.info("end: s3 artifact upload " + file.getAbsolutePath());
