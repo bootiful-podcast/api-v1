@@ -13,5 +13,4 @@ applications:
 #      - route: api.bootifulpodcasts.fm
     env:
       SPRING_PROFILES_ACTIVE: cloud
-
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+}}'
