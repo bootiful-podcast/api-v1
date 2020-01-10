@@ -1,14 +1,35 @@
 package integration.events;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.context.ApplicationEvent;
 
 import java.net.URI;
-import java.util.Map;
 
 public class PodcastPublishedToPodbeanEvent extends ApplicationEvent {
 
 	public PodcastPublishedToPodbeanEvent(String uid, URI mediaUrl, URI permalinkUrl) {
-		super(Map.of("uid", uid, "mediaUrl", mediaUrl, "playerUrl", permalinkUrl));
+		super(PodbeanPodcast.builder().uid(uid).mediaUrl(mediaUrl).playerUrl(permalinkUrl)
+				.build());
+	}
+
+	@Data
+	@Builder
+	@AllArgsConstructor
+	@NoArgsConstructor
+	public static class PodbeanPodcast {
+
+		private String uid;
+
+		private URI mediaUrl, playerUrl;
+
+	}
+
+	@Override
+	public PodbeanPodcast getSource() {
+		return (PodbeanPodcast) super.getSource();
 	}
 
 }

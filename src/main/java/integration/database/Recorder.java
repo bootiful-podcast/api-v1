@@ -6,6 +6,7 @@ import integration.aws.AwsS3Service;
 import integration.events.PodcastArchiveUploadedEvent;
 import integration.events.PodcastArtifactsUploadedToProcessorEvent;
 import integration.events.PodcastProcessedEvent;
+import integration.events.PodcastPublishedToPodbeanEvent;
 import integration.utils.FileUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -40,7 +41,6 @@ class Recorder {
 		if (!media.isEmpty()) {
 			for (PodcastPackageManifest.Media m : media) {
 				var extension = m.getExtension();
-
 				var interviewMedia = Media.builder().fileName(m.getInterview())
 						.extension(extension).type(AssetTypes.TYPE_INTERVIEW).build();
 				var introMedia = Media.builder().extension(extension)
@@ -61,7 +61,6 @@ class Recorder {
 
 	@EventListener
 	public void artifactsUploadedToS3(PodcastArtifactsUploadedToProcessorEvent event) {
-
 		// record data
 		var files = event.getSource();
 		var uid = files.getUid();
@@ -75,8 +74,7 @@ class Recorder {
 			log.info(event.getClass().getName() + " : " + "s3 artifact uploaded for file "
 					+ fileMetadata.getType() + " for project with UID " + uid
 					+ " which is an asset of type " + type);
-		}, () -> log
-				.info("there is no " + Podcast.class.getName() + " matching UID " + uid));
+		}, missingPodcastRunnable(uid));
 
 		var stagingDirectory = event.getSource().getFile();
 		Assert.isTrue(
@@ -89,14 +87,27 @@ class Recorder {
 	public void podcastProcessed(PodcastProcessedEvent event) {
 		log.info("podcast audio file has been processed: " + event.toString());
 		var uid = event.getUid();
-		repository.findByUid(uid).ifPresentOrElse(p -> {
+		repository.findByUid(uid).ifPresentOrElse(podcast -> {
 			var uri = s3Service.createS3Uri(event.getBucketName(), "",
 					event.getFileName());
-			p.setMediaS3Uri(uri.toString());
-			p.setS3OutputFileName(event.getFileName());
-			repository.save(p);
-		}, () -> log.info(
-				"there was no " + Podcast.class.getName() + " matching UID " + uid));
+			podcast.setMediaS3Uri(uri.toString());
+			podcast.setS3OutputFileName(event.getFileName());
+			repository.save(podcast);
+		}, missingPodcastRunnable(uid));
+	}
+
+	@EventListener
+	public void podcastPublishedToPodbean(PodcastPublishedToPodbeanEvent event) {
+		var uid = event.getSource().getUid();
+		repository.findByUid(uid).ifPresentOrElse(podcast -> {
+			podcast.setPodbeanDraftCreated(new Date());
+			repository.save(podcast);
+		}, missingPodcastRunnable(uid));
+	}
+
+	private static Runnable missingPodcastRunnable(String uid) {
+		return () -> log
+				.info("there is no " + Podcast.class.getName() + " matching UID " + uid);
 	}
 
 }

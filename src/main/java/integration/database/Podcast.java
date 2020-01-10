@@ -31,15 +31,31 @@ public class Podcast {
 	@Column(name = "s3_output_file_name")
 	private String s3OutputFileName;
 
+	@Column(name = "podbean_draft_created")
+	private Date podbeanDraftCreated;
+
+	@Column(name = "podbean_draft_published")
+	private Date podbeanDraftPublished;
+
 	private Date date = new Date();
 
 	@Override
 	public String toString() {
-		return "Podcast{" + "id=" + id + ", uid='" + uid + '\'' + ", title='" + title
-				+ '\'' + ", description='" + description + '\'' + ", notes='" + notes
-				+ '\'' + ", transcript='" + transcript + '\'' + ", mediaS3Uri='"
-				+ mediaS3Uri + '\'' + ", s3OutputFileName='" + s3OutputFileName + '\''
-				+ ", date=" + date + '}';
+		//@formatter:off
+		return "Podcast{" +
+				"id=" + id +
+				", uid='" + uid + '\'' +
+				", title='" + title + '\'' +
+				", description='" + description + '\'' +
+				", notes='" + notes + '\'' +
+				", transcript='" + transcript + '\'' +
+				", mediaS3Uri='" + mediaS3Uri + '\'' +
+				", s3OutputFileName='" + s3OutputFileName + '\'' +
+				", podbeanDraftCreated=" + podbeanDraftCreated +
+				", podbeanDraftPublished=" + podbeanDraftPublished +
+				", date=" + date +
+				'}';
+		//@formatter:on
 	}
 
 	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
