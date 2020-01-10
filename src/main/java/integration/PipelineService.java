@@ -20,7 +20,6 @@ class PipelineService {
 
 	PipelineService(MessageChannel channel, PodcastRepository repository,
 			ServerUriResolver resolver) {
-
 		this.pipeline = channel;
 		this.repository = repository;
 		this.resolver = resolver;

@@ -1,17 +1,23 @@
 package integration;
 
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.sendgrid.Email;
+import com.sendgrid.helpers.mail.objects.Email;
+import fm.bootifulpodcast.podbean.*;
 import integration.aws.AwsS3Service;
+import integration.database.Podcast;
 import integration.database.PodcastRepository;
 import integration.email.NotificationService;
 import integration.events.PodcastArchiveUploadedEvent;
 import integration.events.PodcastArtifactsUploadedToProcessorEvent;
 import integration.events.PodcastProcessedEvent;
+import integration.events.PodcastPublishedToPodbeanEvent;
 import integration.rabbitmq.RabbitMqHelper;
 import integration.utils.FileUtils;
 import integration.utils.JsonHelper;
 import integration.utils.UnzipUtils;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -20,6 +26,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.AggregatorSpec;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -32,9 +39,12 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -61,19 +71,23 @@ class IntegrationFlowConfiguration {
 
 	private final ApplicationEventPublisher publisher;
 
+	private final AwsS3Service s3Service;
+
 	private final PodcastRepository repository;
 
-	IntegrationFlowConfiguration(PipelineProperties properties,
-			PodcastRepository repository, JsonHelper jsonService, AwsS3Service s3,
+	private final PodbeanClient podbeanClient;
+
+	IntegrationFlowConfiguration(PipelineProperties properties, PodbeanClient pc,
+			AwsS3Service s3, PodcastRepository repository, JsonHelper jsonService,
 			ApplicationEventPublisher publisher) {
 
+		this.podbeanClient = pc;
 		var retryTemplate = new RetryTemplate();
-
+		this.s3Service = s3;
 		this.repository = repository;
 		this.properties = properties;
 		this.publisher = publisher;
 		this.json = jsonService;
-
 		this.unzipSplitter = (file) -> {
 			var stagingDirectoryForRequest = FileUtils.ensureDirectoryExists(
 					new File(properties.getS3().getStagingDirectory(),
@@ -101,7 +115,6 @@ class IntegrationFlowConfiguration {
 					var mediaMap = Map.of( //
 							IS_INTERVIEW_FILE, interview, //
 							IS_INTRODUCTION_FILE, intro, //
-							//
 							ARTIFACT_STAGING_DIRECTORY, stagingDirectoryForRequest //
 					);
 					if (StringUtils.hasText(type)) {
@@ -203,15 +216,13 @@ class IntegrationFlowConfiguration {
 		var amqpInboundAdapter = Amqp //
 				.inboundAdapter(connectionFactory, repliesQueue) //
 				.get();
-
 		var outputFileKey = "output-file";
-
 		return IntegrationFlows //
 				.from(amqpInboundAdapter) //
 				.handle(String.class, (payload, headers) -> {
 					var reference = new TypeReference<Map<String, String>>() {
 					};
-					var resultMap = json.fromJson(payload, reference);
+					var resultMap = this.json.fromJson(payload, reference);
 					var outputFile = resultMap.getOrDefault("mp3",
 							resultMap.getOrDefault("wav", null));
 					var uid = resultMap.get("uid");
@@ -222,18 +233,16 @@ class IntegrationFlowConfiguration {
 					return resultMap;
 				}) //
 				.handle((GenericHandler<Map<String, String>>) (payload, headers) -> {
-
 					var uid = payload.get("uid");
-					repository.findByUid(uid).ifPresent(podcast -> {
+					Optional<Podcast> byUid = repository.findByUid(uid);
+					byUid.ifPresent(podcast -> {
 						var data = Map.<String, Object>of(//
 								"uid", uid, //
 								"title", podcast.getTitle(), //
 								"outputMediaUri",
 								service.buildMediaUriForPodcastById(podcast.getId())
 										.toString());
-
 						log.info("sending the following data into the template: " + data);
-
 						var fileUploadedTemplate = "file-uploaded.ftl";
 						var content = emailer.render(fileUploadedTemplate, data);
 						var response = emailer.send(new Email(to), new Email(from),
@@ -241,11 +250,54 @@ class IntegrationFlowConfiguration {
 						var xxSuccessful = HttpStatus.valueOf(response.getStatusCode())
 								.is2xxSuccessful();
 						Assert.isTrue(xxSuccessful,
-								"tried to send an email and we got back a non-positive status code.");
+								"tried to send a notification email with SendGrid, and got back a non-positive status code. "
+										+ response.getBody());
 					});
+					return byUid.orElse(null);
+				})//
+				.channel(this.podbeanPublicationChannel()).get();
+	}
 
+	@Bean
+	IntegrationFlow podbeanPublicationPipeline(
+			@Value("${podcast.pipeline.podbean.staging-directory}") File podbeanDirectory) {
+
+		FileUtils.ensureDirectoryExists(podbeanDirectory);
+
+		return IntegrationFlows//
+				.from(this.podbeanPublicationChannel())//
+				.handle((GenericHandler<Podcast>) (podcast, messageHeaders) -> {
+					var fileForDownloadedMp3 = new File(podbeanDirectory,
+							podcast.getUid() + ".mp3");
+					this.downloadPodcastMp3ToLocalFileSystem(podcast,
+							fileForDownloadedMp3);
+					var upload = podbeanClient.upload(
+							MediaType.parseMediaType("audio/mpeg"), fileForDownloadedMp3,
+							fileForDownloadedMp3.length());
+					var episode = podbeanClient.publishEpisode(podcast.getTitle(),
+							podcast.getDescription(), EpisodeStatus.DRAFT,
+							EpisodeType.PUBLIC, upload.getFileKey(), null);
+					log.info("the episode has been published to " + episode.toString());
+					recordPodcastPublishedToPodbean(podcast, episode);
 					return null;
-				}).get();
+				})//
+				.get();
+	}
+
+	@SneakyThrows
+	private void downloadPodcastMp3ToLocalFileSystem(Podcast podcast, File file) {
+		log.info("trying to download the S3 file for podcast " + podcast.getUid()
+				+ " and publish it to the Podbean API.");
+		var s3Key = podcast.getS3OutputFileName();
+		var s3Object = this.s3Service.downloadOutputFile(s3Key);
+		FileCopyUtils.copy(s3Object.getObjectContent(), new FileOutputStream(file));
+		Assert.isTrue(file.exists() && file.length() > 0,
+				"the file could not be downloaded to " + file.getAbsolutePath() + ".");
+	}
+
+	private void recordPodcastPublishedToPodbean(Podcast podcast, Episode episode) {
+		this.publisher.publishEvent(new PodcastPublishedToPodbeanEvent(podcast.getUid(),
+				episode.getMediaUrl(), episode.getPlayerUrl()));
 	}
 
 	private void recordUploadPackageManifest(PodcastPackageManifest packageManifest) {
@@ -254,8 +306,7 @@ class IntegrationFlowConfiguration {
 
 	private void recordProcessedFilesToDatabase(String uid, String outputBucketName,
 			String fn) {
-		var event = new PodcastProcessedEvent(uid, outputBucketName, fn);
-		this.publisher.publishEvent(event);
+		this.publisher.publishEvent(new PodcastProcessedEvent(uid, outputBucketName, fn));
 	}
 
 	@Bean
@@ -273,15 +324,16 @@ class IntegrationFlowConfiguration {
 
 		return IntegrationFlows//
 				.from(apiToPipelineChannel()) //
+				.transform(String.class, File::new)//
 				.split(File.class, this.unzipSplitter) //
-				.channel(concurrentQueue()).get();
+				.channel(concurrentQueue())//
+				.get();
 	}
 
 	@Bean
 	IntegrationFlow concurrentIntegrationFlow(AmqpTemplate template) {
-
 		var processorConfig = properties.getProcessor();
-		var processorOutboundAdapter = Amqp //
+		var processorOutboundAdapter = Amqp//
 				.outboundAdapter(template)//
 				.exchangeName(processorConfig.getRequestsExchange()) //
 				.routingKey(processorConfig.getRequestsRoutingKey());
@@ -298,6 +350,11 @@ class IntegrationFlowConfiguration {
 	MessageChannel concurrentQueue() {
 		var te = Executors.newFixedThreadPool(10);
 		return MessageChannels.executor(te).get();
+	}
+
+	@Bean
+	MessageChannel podbeanPublicationChannel() {
+		return MessageChannels.direct().get();
 	}
 
 	@Bean

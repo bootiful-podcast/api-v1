@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.2.0.M3</version>
+        <version>2.2.2.RELEASE</version>
         <relativePath/>
     </parent>
     <groupId>fm.bootifulpodcast</groupId>
@@ -17,6 +17,11 @@
         <java.version>11</java.version>
     </properties>
     <dependencies>
+        <dependency>
+            <groupId>fm.bootifulpodcast</groupId>
+            <artifactId>podbean-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
