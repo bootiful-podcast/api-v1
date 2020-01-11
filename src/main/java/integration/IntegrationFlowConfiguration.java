@@ -1,10 +1,11 @@
 package integration;
 
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sendgrid.helpers.mail.objects.Email;
-import fm.bootifulpodcast.podbean.*;
+import fm.bootifulpodcast.podbean.Episode;
+import fm.bootifulpodcast.podbean.EpisodeStatus;
+import fm.bootifulpodcast.podbean.EpisodeType;
+import fm.bootifulpodcast.podbean.PodbeanClient;
 import integration.aws.AwsS3Service;
 import integration.database.Podcast;
 import integration.database.PodcastRepository;
@@ -42,7 +43,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.*;
@@ -80,9 +80,8 @@ class IntegrationFlowConfiguration {
 	IntegrationFlowConfiguration(PipelineProperties properties, PodbeanClient pc,
 			AwsS3Service s3, PodcastRepository repository, JsonHelper jsonService,
 			ApplicationEventPublisher publisher) {
-
-		this.podbeanClient = pc;
 		var retryTemplate = new RetryTemplate();
+		this.podbeanClient = pc;
 		this.s3Service = s3;
 		this.repository = repository;
 		this.properties = properties;
@@ -112,10 +111,10 @@ class IntegrationFlowConfiguration {
 					var intro = f.getName().contains(media.getIntroduction());
 					var type = interview ? AssetTypes.TYPE_INTERVIEW
 							: (intro ? AssetTypes.TYPE_INTRODUCTION : null);
-					var mediaMap = Map.of( //
+					var mediaMap = Map.of(//
 							IS_INTERVIEW_FILE, interview, //
 							IS_INTRODUCTION_FILE, intro, //
-							ARTIFACT_STAGING_DIRECTORY, stagingDirectoryForRequest //
+							ARTIFACT_STAGING_DIRECTORY, stagingDirectoryForRequest//
 					);
 					if (StringUtils.hasText(type)) {
 						builder.setHeader(ASSET_TYPE, type);
@@ -277,7 +276,6 @@ class IntegrationFlowConfiguration {
 					var episode = podbeanClient.publishEpisode(podcast.getTitle(),
 							podcast.getDescription(), EpisodeStatus.DRAFT,
 							EpisodeType.PUBLIC, upload.getFileKey(), null);
-					log.info("the episode has been published to " + episode.toString());
 					recordPodcastPublishedToPodbean(podcast, episode);
 					return null;
 				})//
@@ -298,6 +296,7 @@ class IntegrationFlowConfiguration {
 	private void recordPodcastPublishedToPodbean(Podcast podcast, Episode episode) {
 		this.publisher.publishEvent(new PodcastPublishedToPodbeanEvent(podcast.getUid(),
 				episode.getMediaUrl(), episode.getPlayerUrl()));
+		log.info("the episode has been published to " + episode.toString());
 	}
 
 	private void recordUploadPackageManifest(PodcastPackageManifest packageManifest) {
