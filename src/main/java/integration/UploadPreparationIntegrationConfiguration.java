@@ -72,7 +72,7 @@ class UploadPreparationIntegrationConfiguration {
 			var manifestFile = manifest.get(0);
 			Assert.notNull(manifest, "the manifest must not be null");
 			var uploadPackageManifest = PodcastPackageManifest.from(manifestFile);
-			recordUploadPackageManifest(uploadPackageManifest);
+			this.publisher.publishEvent(new PodcastArchiveUploadedEvent(uploadPackageManifest));
 			var stream = files.stream().map(f -> {
 				var builder = MessageBuilder//
 						.withPayload(f)//
@@ -177,10 +177,6 @@ class UploadPreparationIntegrationConfiguration {
 	@Bean
 	MessageChannel uploadsMessageChannel() {
 		return MessageChannels.direct().get();
-	}
-
-	private void recordUploadPackageManifest(PodcastPackageManifest packageManifest) {
-		this.publisher.publishEvent(new PodcastArchiveUploadedEvent(packageManifest));
 	}
 
 	private static String determineContentTypeFor(File file) {
