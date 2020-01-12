@@ -24,8 +24,9 @@ public class ApiApplication {
 
 	@Bean
 	PipelineService pipelineService(PodcastRepository repository,
-			ServerUriResolver resolver, IntegrationFlowConfiguration configuration) {
-		return new PipelineService(configuration.apiToPipelineChannel(), repository,
+			ServerUriResolver resolver,
+			UploadPreparationIntegrationConfiguration configuration) {
+		return new PipelineService(configuration.uploadsMessageChannel(), repository,
 				resolver);
 	}
 

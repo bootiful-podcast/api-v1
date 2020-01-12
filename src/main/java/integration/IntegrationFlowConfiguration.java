@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 import static integration.Headers.*;
 
 @Log4j2
-@Configuration
+// @Configuration
 class IntegrationFlowConfiguration {
 
 	private final PipelineProperties properties;
