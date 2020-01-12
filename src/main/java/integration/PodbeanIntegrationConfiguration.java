@@ -29,6 +29,11 @@ import org.springframework.util.FileCopyUtils;
 import java.io.File;
 import java.io.FileOutputStream;
 
+/**
+ * This is step 3 in the flow.
+ *
+ * @author <a href="mailto:josh@joshlong.com">Josh Long</a>
+ */
 @Log4j2
 @Configuration
 class PodbeanIntegrationConfiguration {

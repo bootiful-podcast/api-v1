@@ -30,8 +30,14 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import static integration.Headers.*;
 
+/**
+ * This is step 1 in the flow.
+ *
+ * @author <a href="mailto:josh@joshlong.com">Josh Long</a>
+ */
 @Log4j2
 @Configuration
 class UploadPreparationIntegrationConfiguration {

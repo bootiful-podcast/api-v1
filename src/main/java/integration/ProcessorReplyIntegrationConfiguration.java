@@ -11,7 +11,6 @@ import integration.utils.JsonHelper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,14 +18,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.integration.handler.GenericHandler;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * This is step 2 in the flow.
+ *
+ * @author <a href="mailto:josh@joshlong.com">Josh Long</a>
+ */
 @Configuration
 @Log4j2
 class ProcessorReplyIntegrationConfiguration {
