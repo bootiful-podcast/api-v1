@@ -37,25 +37,28 @@ public class Podcast {
 	@Column(name = "podbean_draft_published")
 	private Date podbeanDraftPublished;
 
+	@Column(name = "podbean_media_uri")
+	private String podbeanMediaUri;
+
 	private Date date = new Date();
 
 	@Override
 	public String toString() {
-		//@formatter:off
-		return "Podcast{" +
-				"id=" + id +
-				", uid='" + uid + '\'' +
-				", title='" + title + '\'' +
-				", description='" + description + '\'' +
-				", notes='" + notes + '\'' +
-				", transcript='" + transcript + '\'' +
-				", mediaS3Uri='" + mediaS3Uri + '\'' +
-				", s3OutputFileName='" + s3OutputFileName + '\'' +
-				", podbeanDraftCreated=" + podbeanDraftCreated +
-				", podbeanDraftPublished=" + podbeanDraftPublished +
-				", date=" + date +
-				'}';
-		//@formatter:on
+	//@formatter:off
+    return "Podcast{" +
+        "id=" + id +
+        ", uid='" + uid + '\'' +
+        ", title='" + title + '\'' +
+        ", description='" + description + '\'' +
+        ", notes='" + notes + '\'' +
+        ", transcript='" + transcript + '\'' +
+        ", mediaS3Uri='" + mediaS3Uri + '\'' +
+        ", s3OutputFileName='" + s3OutputFileName + '\'' +
+        ", podbeanDraftCreated=" + podbeanDraftCreated +
+        ", podbeanDraftPublished=" + podbeanDraftPublished +
+        ", date=" + date +
+        '}';
+    //@formatter:on
 	}
 
 	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
