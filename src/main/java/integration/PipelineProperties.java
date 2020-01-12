@@ -12,6 +12,8 @@ import java.io.File;
 @ConfigurationProperties(prefix = "podcast.pipeline")
 public class PipelineProperties {
 
+	private File root;
+
 	private S3 s3 = new S3();
 
 	private Processor processor = new Processor();
