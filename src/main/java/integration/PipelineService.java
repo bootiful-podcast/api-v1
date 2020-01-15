@@ -46,9 +46,4 @@ class PipelineService {
 		return this.uriFromPodcast(uri, this.repository.findById(podcastid));
 	}
 
-	public URI buildMediaUriForPodcastByUid(String uid) {
-		URI uri = this.resolver.resolveCurrentRootUri();
-		return this.uriFromPodcast(uri, this.repository.findByUid(uid));
-	}
-
 }

@@ -101,7 +101,6 @@ class ProcessorReplyIntegrationConfiguration {
 				})//
 				.transform(Podcast::getUid)//
 				.handle(processorOutboundAdapter).get();//
-		// .channel(this.podbeanPublicationChannel()).get();
 	}
 
 	private void recordProcessedFilesToDatabase(String uid, String outputBucketName,

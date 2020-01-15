@@ -23,6 +23,8 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.util.FileSystemUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
@@ -150,7 +152,9 @@ class UploadPreparationIntegrationConfiguration {
 	@Bean
 	IntegrationFlow uploadPreparationIntegrationFlow(AmqpTemplate template,
 			RabbitMqHelper helper) {
-		var processorConfig = properties.getProcessor();
+
+		var processorConfig = this.properties.getProcessor();
+
 		var processorOutboundAdapter = Amqp//
 				.outboundAdapter(template)//
 				.exchangeName(processorConfig.getRequestsExchange()) //

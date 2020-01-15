@@ -94,6 +94,7 @@ class PodbeanIntegrationConfiguration {
 				+ " and publish it to the Podbean API.");
 		var s3Key = podcast.getS3OutputFileName();
 		var s3Object = s3Service.downloadOutputFile(s3Key);
+
 		FileCopyUtils.copy(s3Object.getObjectContent(), new FileOutputStream(file));
 		Assert.isTrue(file.exists() && file.length() > 0,
 				"the file could not be downloaded to " + file.getAbsolutePath() + ".");
