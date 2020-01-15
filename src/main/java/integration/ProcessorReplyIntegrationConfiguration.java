@@ -53,7 +53,6 @@ class ProcessorReplyIntegrationConfiguration {
 				.outboundAdapter(template)//
 				.exchangeName(podbeanConfiguration.getRequestsExchange()) //
 				.routingKey(podbeanConfiguration.getRequestsRoutingKey());
-
 		var repliesQueue = properties.getProcessor().getRepliesQueue();
 		var amqpInboundAdapter = Amqp //
 				.inboundAdapter(connectionFactory, repliesQueue) //

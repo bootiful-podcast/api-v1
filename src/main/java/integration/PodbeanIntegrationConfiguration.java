@@ -7,9 +7,11 @@ import integration.aws.AwsS3Service;
 import integration.database.Podcast;
 import integration.database.PodcastRepository;
 import integration.events.PodcastPublishedToPodbeanEvent;
+import integration.events.PodcastSiteGeneratedEvent;
 import integration.utils.FileUtils;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
@@ -21,11 +23,13 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.integration.handler.GenericHandler;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.Date;
 
 /**
  * This is step 3 in the flow.
@@ -38,13 +42,21 @@ class PodbeanIntegrationConfiguration {
 
 	@Bean
 	IntegrationFlow podbeanPublicationPipeline(ApplicationEventPublisher publisher,
-			AwsS3Service s3Service, ConnectionFactory connectionFactory,
-			PodcastRepository repository, PodbeanClient podbeanClient,
-			PipelineProperties pipelineProperties) {
+			AwsS3Service s3Service, AmqpTemplate template,
+			ConnectionFactory connectionFactory, PodcastRepository repository,
+			PodbeanClient podbeanClient, PipelineProperties pipelineProperties) {
+
+		var siteGeneratorRequests = Amqp//
+				.outboundAdapter(template)//
+				.exchangeName(pipelineProperties.getSiteGenerator().getRequestsExchange()) //
+				.routingKey(
+						pipelineProperties.getSiteGenerator().getRequestsRoutingKey());
+
 		var amqpInboundAdapter = Amqp //
 				.inboundAdapter(connectionFactory,
 						pipelineProperties.getPodbean().getRequestsQueue()) //
 				.get();
+
 		var podbeanDirectory = pipelineProperties.getPodbean().getPodbeanDirectory();
 		FileUtils.ensureDirectoryExists(podbeanDirectory);
 		return IntegrationFlows//
@@ -65,9 +77,14 @@ class PodbeanIntegrationConfiguration {
 							new PodcastPublishedToPodbeanEvent(podcast.getUid(),
 									episode.getMediaUrl(), episode.getPlayerUrl()));
 					log.info("the episode has been published to " + episode.toString());
-					return null;
+					return true;
 				})//
-				.get();
+				.handle(siteGeneratorRequests)//
+				.handle(Object.class, (o, messageHeaders) -> {
+					publisher.publishEvent(new PodcastSiteGeneratedEvent(new Date()));
+					log.info("publishing an event for the podcast site-generation...");
+					return null;
+				}).get();
 	}
 
 	@SneakyThrows

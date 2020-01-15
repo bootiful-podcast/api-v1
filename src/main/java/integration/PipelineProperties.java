@@ -22,6 +22,19 @@ public class PipelineProperties {
 
 	private Podbean podbean = new Podbean();
 
+	private final SiteGenerator siteGenerator = new SiteGenerator();
+
+	@Data
+	public static class SiteGenerator {
+
+		private String requestsQueue = "site-generator-requests-queue";
+
+		private String requestsExchange = this.requestsQueue;
+
+		private String requestsRoutingKey = this.requestsQueue;
+
+	}
+
 	@Data
 	public static class Podbean {
 
