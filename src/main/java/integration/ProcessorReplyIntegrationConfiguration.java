@@ -2,11 +2,11 @@ package integration;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sendgrid.helpers.mail.objects.Email;
+import fm.bootifulpodcast.rabbitmq.RabbitMqHelper;
 import integration.database.Podcast;
 import integration.database.PodcastRepository;
 import integration.email.NotificationService;
 import integration.events.PodcastProcessedEvent;
-import integration.rabbitmq.RabbitMqHelper;
 import integration.utils.JsonHelper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.core.AmqpTemplate;

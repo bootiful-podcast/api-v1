@@ -1,6 +1,5 @@
 package integration;
 
-import fm.bootifulpodcast.podbean.Episode;
 import fm.bootifulpodcast.podbean.EpisodeStatus;
 import fm.bootifulpodcast.podbean.EpisodeType;
 import fm.bootifulpodcast.podbean.PodbeanClient;
@@ -12,7 +11,6 @@ import integration.utils.FileUtils;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

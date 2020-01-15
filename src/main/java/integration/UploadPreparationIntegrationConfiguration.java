@@ -1,9 +1,9 @@
 package integration;
 
+import fm.bootifulpodcast.rabbitmq.RabbitMqHelper;
 import integration.aws.AwsS3Service;
 import integration.events.PodcastArchiveUploadedEvent;
 import integration.events.PodcastArtifactsUploadedToProcessorEvent;
-import integration.rabbitmq.RabbitMqHelper;
 import integration.utils.FileUtils;
 import integration.utils.JsonHelper;
 import integration.utils.UnzipUtils;

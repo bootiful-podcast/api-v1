@@ -1,1 +1,0 @@
-org.springframework.boot.env.EnvironmentPostProcessor=integration.rabbitmq.RabbitMqEnvironmentPostProcessor
