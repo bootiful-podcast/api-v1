@@ -5,6 +5,7 @@ applications:
     buildpack: https://github.com/cloudfoundry/java-buildpack.git
     random-route: true
     memory: 2G
+    disk_quota: 2G
     services:
       - bootiful-podcast-mq
       - bootiful-podcast-db

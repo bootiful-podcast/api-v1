@@ -97,6 +97,7 @@ class PodbeanIntegrationConfiguration {
 		FileCopyUtils.copy(s3Object.getObjectContent(), new FileOutputStream(file));
 		Assert.isTrue(file.exists() && file.length() > 0,
 				"the file could not be downloaded to " + file.getAbsolutePath() + ".");
+		log.info("the size of the downloaded file is " + file.length());
 	}
 
 	@Bean
