@@ -42,7 +42,7 @@ import static integration.Headers.*;
  */
 @Log4j2
 @Configuration
-class UploadPreparationIntegrationConfiguration {
+class Step1UploadPreparationIntegrationConfiguration {
 
 	private final GenericHandler<File> s3UploadHandler;
 
@@ -56,8 +56,9 @@ class UploadPreparationIntegrationConfiguration {
 
 	private final ApplicationEventPublisher publisher;
 
-	UploadPreparationIntegrationConfiguration(AwsS3Service s3, JsonHelper jsonService,
-			PipelineProperties properties, ApplicationEventPublisher publisher) {
+	Step1UploadPreparationIntegrationConfiguration(AwsS3Service s3,
+			JsonHelper jsonService, PipelineProperties properties,
+			ApplicationEventPublisher publisher) {
 		this.properties = properties;
 		this.publisher = publisher;
 		var retryTemplate = new RetryTemplate();

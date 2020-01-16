@@ -38,7 +38,7 @@ import java.util.Date;
  */
 @Log4j2
 @Configuration
-class PodbeanIntegrationConfiguration {
+class Step3PodbeanIntegrationConfiguration {
 
 	@Bean
 	IntegrationFlow podbeanPublicationPipeline(ApplicationEventPublisher publisher,

@@ -31,11 +31,11 @@ import java.util.Optional;
  */
 @Log4j2
 @Configuration
-class ProcessorReplyIntegrationConfiguration {
+class Step2ProcessorReplyIntegrationConfiguration {
 
 	private final ApplicationEventPublisher publisher;
 
-	ProcessorReplyIntegrationConfiguration(ApplicationEventPublisher publisher) {
+	Step2ProcessorReplyIntegrationConfiguration(ApplicationEventPublisher publisher) {
 		this.publisher = publisher;
 	}
 
