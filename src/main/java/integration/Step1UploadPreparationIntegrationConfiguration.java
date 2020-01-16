@@ -12,6 +12,7 @@ import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.AggregatorSpec;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -209,8 +210,8 @@ class Step1UploadPreparationIntegrationConfiguration {
 		var map = Map.of(//
 				"wav", "audio/wav", //
 				"mp3", "audio/mp3", //
-				"xml", "application/xml" //
-		);
+				"xml", "application/xml", //
+				"jpg", "image/jpeg");
 		var fn = file.getName().toLowerCase();
 		for (var ext : map.keySet()) {
 			if (fn.endsWith(ext)) {
