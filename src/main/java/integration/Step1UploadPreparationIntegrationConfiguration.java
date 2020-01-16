@@ -190,6 +190,31 @@ class Step1UploadPreparationIntegrationConfiguration {
 		};
 	}
 
+	private static String determineContentTypeFor(File file) {
+		Assert.notNull(file, "the file must not be null");
+		var map = Map.of(//
+				"wav", "audio/wav", //
+				"mp3", "audio/mp3", //
+				"xml", "application/xml", //
+				"jpg", "image/jpeg");
+		var fn = file.getName().toLowerCase();
+		for (var ext : map.keySet()) {
+			if (fn.endsWith(ext)) {
+				return map.get(ext);
+			}
+		}
+		throw new RuntimeException("Invalid file-type!");
+	}
+
+	private static void establishHeaderIfMatches(Map<String, String> request,
+			Message<?> msg, String header, String newKey) {
+		var isTrue = msg.getHeaders().containsKey(header)
+				&& Objects.requireNonNull(msg.getHeaders().get(header, Boolean.class));
+		if (isTrue) {
+			request.put(newKey, msg.getHeaders().get(S3_PATH, String.class));
+		}
+	}
+
 	@Bean
 	IntegrationFlow uploadPreparationIntegrationFlow(AmqpTemplate template,
 			RabbitMqHelper helper) {
@@ -223,31 +248,6 @@ class Step1UploadPreparationIntegrationConfiguration {
 	@Bean
 	MessageChannel uploadsMessageChannel() {
 		return MessageChannels.direct().get();
-	}
-
-	private static String determineContentTypeFor(File file) {
-		Assert.notNull(file, "the file must not be null");
-		var map = Map.of(//
-				"wav", "audio/wav", //
-				"mp3", "audio/mp3", //
-				"xml", "application/xml", //
-				"jpg", "image/jpeg");
-		var fn = file.getName().toLowerCase();
-		for (var ext : map.keySet()) {
-			if (fn.endsWith(ext)) {
-				return map.get(ext);
-			}
-		}
-		throw new RuntimeException("Invalid file-type!");
-	}
-
-	private static void establishHeaderIfMatches(Map<String, String> request,
-			Message<?> msg, String header, String newKey) {
-		var isTrue = msg.getHeaders().containsKey(header)
-				&& Objects.requireNonNull(msg.getHeaders().get(header, Boolean.class));
-		if (isTrue) {
-			request.put(newKey, msg.getHeaders().get(S3_PATH, String.class));
-		}
 	}
 
 }

@@ -2,7 +2,6 @@ package integration;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.io.File;
@@ -11,6 +10,8 @@ import java.io.File;
 @NoArgsConstructor
 @ConfigurationProperties(prefix = "podcast.pipeline")
 public class PipelineProperties {
+
+	private final SiteGenerator siteGenerator = new SiteGenerator();
 
 	private File root;
 
@@ -21,8 +22,6 @@ public class PipelineProperties {
 	private Notifications notifications = new Notifications();
 
 	private Podbean podbean = new Podbean();
-
-	private final SiteGenerator siteGenerator = new SiteGenerator();
 
 	@Data
 	public static class SiteGenerator {

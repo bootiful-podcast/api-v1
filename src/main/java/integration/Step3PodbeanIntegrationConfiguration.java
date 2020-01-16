@@ -7,7 +7,6 @@ import integration.aws.AwsS3Service;
 import integration.database.Podcast;
 import integration.database.PodcastRepository;
 import integration.events.PodcastPublishedToPodbeanEvent;
-import integration.events.PodcastSiteGeneratedEvent;
 import integration.utils.FileUtils;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -23,13 +22,11 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.integration.handler.GenericHandler;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.Date;
 
 /**
  * This is step 3 in the flow.

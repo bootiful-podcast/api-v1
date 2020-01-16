@@ -9,8 +9,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedInputStream;
@@ -25,6 +23,14 @@ import java.util.Objects;
 @Log4j2
 @NoArgsConstructor
 public class PodcastPackageManifest {
+
+	private String title, description, uid;
+
+	private Interview interview = new Interview();
+
+	private Introduction introduction = new Introduction();
+
+	private Photo photo = new Photo();
 
 	@SneakyThrows
 	public static PodcastPackageManifest from(File file) {
@@ -92,14 +98,6 @@ public class PodcastPackageManifest {
 		}
 		return null;
 	}
-
-	private String title, description, uid;
-
-	private Interview interview = new Interview();
-
-	private Introduction introduction = new Introduction();
-
-	private Photo photo = new Photo();
 
 	@Data
 	public static class Interview {

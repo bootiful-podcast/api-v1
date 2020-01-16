@@ -1,8 +1,6 @@
 package integration.database;
 
 import integration.AssetTypes;
-import integration.OldPodcastPackageManifest;
-import integration.PodcastPackageManifest;
 import integration.aws.AwsS3Service;
 import integration.events.PodcastArchiveUploadedEvent;
 import integration.events.PodcastArtifactsUploadedToProcessorEvent;
@@ -16,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -37,6 +34,11 @@ class Recorder {
 			return fileName.split("\\.");
 		}
 		return null;
+	}
+
+	private static Runnable missingPodcastRunnable(String uid) {
+		return () -> log
+				.info("there is no " + Podcast.class.getName() + " matching UID " + uid);
 	}
 
 	private Media mediaFor(String fn, String at) {
@@ -111,11 +113,6 @@ class Recorder {
 			podcast.setPodbeanMediaUri(event.getSource().getMediaUrl().toString());
 			repository.save(podcast);
 		}, missingPodcastRunnable(uid));
-	}
-
-	private static Runnable missingPodcastRunnable(String uid) {
-		return () -> log
-				.info("there is no " + Podcast.class.getName() + " matching UID " + uid);
 	}
 
 }

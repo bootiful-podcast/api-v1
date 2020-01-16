@@ -15,6 +15,11 @@ public class PodcastPublishedToPodbeanEvent extends ApplicationEvent {
 				.build());
 	}
 
+	@Override
+	public PodbeanPodcast getSource() {
+		return (PodbeanPodcast) super.getSource();
+	}
+
 	@Data
 	@Builder
 	@AllArgsConstructor
@@ -25,11 +30,6 @@ public class PodcastPublishedToPodbeanEvent extends ApplicationEvent {
 
 		private URI mediaUrl, playerUrl;
 
-	}
-
-	@Override
-	public PodbeanPodcast getSource() {
-		return (PodbeanPodcast) super.getSource();
 	}
 
 }

@@ -10,11 +10,6 @@ import java.io.File;
 
 public class PodcastArtifactsUploadedToProcessorEvent extends ApplicationEvent {
 
-	@Override
-	public PodcastFiles getSource() {
-		return (PodcastFiles) super.getSource();
-	}
-
 	public PodcastArtifactsUploadedToProcessorEvent(String uid, String type, String s3Uri,
 			File stagingDirectory) {
 		super(PodcastFiles//
@@ -25,6 +20,11 @@ public class PodcastArtifactsUploadedToProcessorEvent extends ApplicationEvent {
 				.s3Uri(s3Uri) //
 				.build() //
 		);
+	}
+
+	@Override
+	public PodcastFiles getSource() {
+		return (PodcastFiles) super.getSource();
 	}
 
 	@Data
