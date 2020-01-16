@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<podcast title="A Title" uid="eeb3a612-928e-40a2-b238-a59c05ee4b4a">
+    <interview src="interview.mp3"/>
+    <introduction src="introduction.mp3"/>
+    <photo src="dave-and-i.jpg"/>
+    <description>
+        <![CDATA[
+
+        Description 123
+]]>
+    </description>
+</podcast>

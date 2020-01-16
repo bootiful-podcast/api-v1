@@ -12,7 +12,6 @@ import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
 import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.AggregatorSpec;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -24,8 +23,6 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
-import org.springframework.util.FileCopyUtils;
-import org.springframework.util.FileSystemUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
@@ -81,25 +78,48 @@ class Step1UploadPreparationIntegrationConfiguration {
 			this.publisher
 					.publishEvent(new PodcastArchiveUploadedEvent(uploadPackageManifest));
 			var stream = files.stream().map(f -> {
+				var fileName = f.getName();
+				boolean isIntro = fileName.equalsIgnoreCase(
+						uploadPackageManifest.getIntroduction().getSrc());
+				boolean isInterview = fileName
+						.equalsIgnoreCase(uploadPackageManifest.getInterview().getSrc());
+				boolean isPhoto = fileName
+						.equalsIgnoreCase(uploadPackageManifest.getPhoto().getSrc());
+
+				String assetType = null;
+				if (isPhoto)
+					assetType = AssetTypes.TYPE_PHOTO;
+				if (isInterview)
+					assetType = AssetTypes.TYPE_INTERVIEW;
+				if (isIntro)
+					assetType = AssetTypes.TYPE_INTRODUCTION;
+
 				var builder = MessageBuilder//
 						.withPayload(f)//
 						.setHeader(CONTENT_TYPE, determineContentTypeFor(f))//
-						.setHeader(PACKAGE_MANIFEST, uploadPackageManifest);
-				uploadPackageManifest.getMedia().forEach(media -> {
-					var interview = f.getName().contains(media.getInterview());
-					var intro = f.getName().contains(media.getIntroduction());
-					var type = interview ? AssetTypes.TYPE_INTERVIEW
-							: (intro ? AssetTypes.TYPE_INTRODUCTION : null);
-					var mediaMap = Map.of(//
-							IS_INTERVIEW_FILE, interview, //
-							IS_INTRODUCTION_FILE, intro, //
-							ARTIFACT_STAGING_DIRECTORY, stagingDirectoryForRequest//
-					);
-					if (StringUtils.hasText(type)) {
-						builder.setHeader(ASSET_TYPE, type);
-					}
-					mediaMap.forEach(builder::setHeader);
-				});
+						.setHeader(ARTIFACT_STAGING_DIRECTORY, stagingDirectoryForRequest)//
+						.setHeader(PACKAGE_MANIFEST, uploadPackageManifest)
+						.setHeader(IS_PHOTO_FILE, isPhoto)
+						.setHeader(IS_INTERVIEW_FILE, isInterview)
+						.setHeader(IS_INTRODUCTION_FILE, isIntro);
+
+				// todo remove the ASSET_TYPE do we ever use it?
+				if (StringUtils.hasText(assetType)) {
+					builder.setHeader(ASSET_TYPE, assetType);
+				}
+
+				/*
+				 * uploadPackageManifest.getMedia().forEach(media -> { var interview =
+				 * f.getName().contains(media.getInterview()); var intro =
+				 * f.getName().contains(media.getIntroduction()); var type = interview ?
+				 * AssetTypes.TYPE_INTERVIEW : (intro ? AssetTypes.TYPE_INTRODUCTION :
+				 * null); var mediaMap = Map.of(// IS_INTERVIEW_FILE, interview, //
+				 * IS_INTRODUCTION_FILE, intro, // ARTIFACT_STAGING_DIRECTORY,
+				 * stagingDirectoryForRequest// ); if (StringUtils.hasText(type)) {
+				 * builder.setHeader(ASSET_TYPE, type); }
+				 * mediaMap.forEach(builder::setHeader); });
+				 */
+
 				return builder.build();
 			});
 			return stream.collect(Collectors.toList());

@@ -1,23 +1,24 @@
 package integration;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.ByteArrayInputStream;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.Objects;
 
 @Data
 @AllArgsConstructor
@@ -25,25 +26,60 @@ import java.util.Optional;
 @NoArgsConstructor
 public class PodcastPackageManifest {
 
-	private String title, description, uid;
-
-	public Collection<Media> getMedia() {
-		return new ArrayList<>(this.media);
+	@SneakyThrows
+	public static PodcastPackageManifest from(File file) {
+		try (var fin = new BufferedInputStream(new FileInputStream(file))) {
+			return from(fin);
+		}
 	}
 
-	private Collection<Media> media = new ArrayList<>();
+	@SneakyThrows
+	public static PodcastPackageManifest from(InputStream in) {
+		var dbf = DocumentBuilderFactory.newInstance();
+		var documentBuilder = dbf.newDocumentBuilder();
+		var doc = documentBuilder.parse(in);
 
-	@Data
-	@AllArgsConstructor
-	@NoArgsConstructor
-	@Builder
-	public static class Media {
+		var podcastElement = (Element) doc.getElementsByTagName("podcast").item(0);
 
-		private String interview, introduction, extension;
+		var interview = podcastElement.getElementsByTagName("interview").item(0);
+		var intro = podcastElement.getElementsByTagName("introduction").item(0);
+		var photo = podcastElement.getElementsByTagName("photo").item(0);
+		var description = podcastElement.getElementsByTagName("description").item(0);
+
+		Arrays.asList(interview, intro, photo, description)
+				.forEach(e -> Assert.notNull(e, "the element must not be null"));
+
+		var build = new PodcastPackageManifest();
+		build.getIntroduction().src = readAttributeFrom(
+				Objects.requireNonNull(intro).getAttributes(), "src");
+		build.getInterview().src = readAttributeFrom(
+				Objects.requireNonNull(interview).getAttributes(), "src");
+		build.getPhoto().src = readAttributeFrom(
+				Objects.requireNonNull(photo).getAttributes(), "src");
+
+		build.description = description.getTextContent().trim();
+		build.uid = readAttributeFrom(podcastElement.getAttributes(), "uid");
+		build.title = readAttributeFrom(podcastElement.getAttributes(), "title");
+
+		return build;
 
 	}
 
-	private static String readAttributeFrom(String attr, NamedNodeMap map) {
+	private static Element elementWithin(Element element, String tagName) {
+		var childNodes = element.getChildNodes();
+		var length = childNodes.getLength();
+		for (var i = 0; i < length; i++) {
+			var node = childNodes.item(i);
+			if (node instanceof Element) {
+				var nodeElement = (Element) node;
+				if (nodeElement.getTagName().equalsIgnoreCase(tagName))
+					return nodeElement;
+			}
+		}
+		return null;
+	}
+
+	private static String readAttributeFrom(NamedNodeMap map, String attr) {
 		if (map == null || map.getLength() == 0) {
 			return null;
 		}
@@ -57,55 +93,33 @@ public class PodcastPackageManifest {
 		return null;
 	}
 
-	private static Media readMedia(NodeList nodeList, String ext) {
-		var ok = (nodeList != null && nodeList.getLength() > 0);
-		if (!ok) {
-			return null;
-		}
-		var first = nodeList.item(0);
-		var attributes = first.getAttributes();
-		var interview = readAttributeFrom("interview", attributes);
-		var intro = readAttributeFrom("intro", attributes);
-		return new Media(interview, intro, ext);
+	private String title, description, uid;
+
+	private Interview interview = new Interview();
+
+	private Introduction introduction = new Introduction();
+
+	private Photo photo = new Photo();
+
+	@Data
+	public static class Interview {
+
+		private String src = "";
+
 	}
 
-	@SneakyThrows
-	public static PodcastPackageManifest from(File manifest) {
-		try (FileInputStream fileInputStream = new FileInputStream(manifest)) {
-			return from(fileInputStream);
-		}
+	@Data
+	public static class Introduction {
+
+		private String src = "";
+
 	}
 
-	@SneakyThrows
-	private static PodcastPackageManifest from(InputStream inputStream) {
+	@Data
+	public static class Photo {
 
-		var dbf = DocumentBuilderFactory.newInstance();
-		var db = dbf.newDocumentBuilder();
-		var doc = db.parse(inputStream);
-		var build = new PodcastPackageManifest();
-		var podcast = doc.getElementsByTagName("podcast");
-		Assert.isTrue(podcast.getLength() > 0,
-				"there must be at least one podcast element in a manifest");
-		var attributes = podcast.item(0).getAttributes();
-		build.setDescription(readAttributeFrom("description", attributes));
-		build.setTitle(readAttributeFrom("title", attributes));
-		build.setUid(readAttributeFrom("uid", attributes));
-		List.of("mp3,wav".split(",")).forEach(
-				ext -> getMediaFromDoc(doc, ext).ifPresent(x -> build.media.add(x)));
-		return build;
-	}
+		private String src = "";
 
-	@SneakyThrows
-	public static PodcastPackageManifest from(String manifestContents) {
-		try (var in = new ByteArrayInputStream(
-				manifestContents.getBytes(Charset.forName("UTF-8")))) {
-			return from(in);
-		}
-	}
-
-	private static Optional<Media> getMediaFromDoc(Document doc, String ext) {
-		var media = readMedia(doc.getElementsByTagName(ext), ext);
-		return Optional.ofNullable(media);
 	}
 
 }

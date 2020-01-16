@@ -1,6 +1,7 @@
 package integration.database;
 
 import integration.AssetTypes;
+import integration.OldPodcastPackageManifest;
 import integration.PodcastPackageManifest;
 import integration.aws.AwsS3Service;
 import integration.events.PodcastArchiveUploadedEvent;
@@ -15,8 +16,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Objects;
 
 @Log4j2
 @Component
@@ -28,6 +32,19 @@ class Recorder {
 
 	private final PodcastRepository repository;
 
+	private static String[] baseAndExtension(String fileName) {
+		if (fileName.contains(".")) {
+			return fileName.split("\\.");
+		}
+		return null;
+	}
+
+	private Media mediaFor(String fn, String at) {
+		var split = baseAndExtension(fn);
+		return Media.builder().fileName(fn).extension(Objects.requireNonNull(split)[1])
+				.type(at).build();
+	}
+
 	@EventListener
 	public void productionStartedForUpload(PodcastArchiveUploadedEvent uploadedEvent) {
 		log.info("podcast archive has been uploaded: " + uploadedEvent.toString());
@@ -36,27 +53,17 @@ class Recorder {
 				.description(manifest.getDescription()).title(manifest.getTitle())
 				.uid(manifest.getUid()).build();
 		repository.save(podcast);
-
-		var media = uploadedEvent.getSource().getMedia();
-		if (!media.isEmpty()) {
-			for (PodcastPackageManifest.Media m : media) {
-				var extension = m.getExtension();
-				var interviewMedia = Media.builder().fileName(m.getInterview())
-						.extension(extension).type(AssetTypes.TYPE_INTERVIEW).build();
-				var introMedia = Media.builder().extension(extension)
-						.type(AssetTypes.TYPE_INTRODUCTION).fileName(m.getIntroduction())
-						.build();
-				if (podcast.getMedia() == null) {
-					podcast.setMedia(new ArrayList<>());
-				}
-				podcast.getMedia().add(interviewMedia);
-				podcast.getMedia().add(introMedia);
-				repository.save(podcast);
-			}
+		var interviewMedia = mediaFor(manifest.getInterview().getSrc(),
+				AssetTypes.TYPE_INTERVIEW);
+		var introMedia = mediaFor(manifest.getIntroduction().getSrc(),
+				AssetTypes.TYPE_INTRODUCTION);
+		var photoMedia = mediaFor(manifest.getPhoto().getSrc(), AssetTypes.TYPE_PHOTO);
+		if (podcast.getMedia() == null) {
+			podcast.setMedia(new ArrayList<>());
 		}
-
+		Arrays.asList(interviewMedia, introMedia, photoMedia)
+				.forEach(m -> podcast.getMedia().add(m));
 		repository.save(podcast);
-
 	}
 
 	@EventListener

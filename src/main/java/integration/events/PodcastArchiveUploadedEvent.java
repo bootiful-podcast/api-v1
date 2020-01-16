@@ -1,7 +1,8 @@
 package integration.events;
 
-import org.springframework.context.ApplicationEvent;
 import integration.PodcastPackageManifest;
+import org.springframework.context.ApplicationEvent;
+import integration.OldPodcastPackageManifest;
 
 public class PodcastArchiveUploadedEvent extends ApplicationEvent {
 
