@@ -76,15 +76,18 @@ class PodbeanIntegrationConfiguration {
 					publisher.publishEvent(
 							new PodcastPublishedToPodbeanEvent(podcast.getUid(),
 									episode.getMediaUrl(), episode.getPlayerUrl()));
-					log.info("the episode has been published to " + episode.toString());
+					log.info("the episode has been published to " + episode.toString()
+							+ '.');
+					Assert.isTrue(
+							fileForDownloadedMp3.exists()
+									&& fileForDownloadedMp3.delete(),
+							"the" + " file " + fileForDownloadedMp3.getAbsolutePath()
+									+ " does not exist or could not be deleted");
+
 					return true;
 				})//
 				.handle(siteGeneratorRequests)//
-				.handle(Object.class, (o, messageHeaders) -> {
-					publisher.publishEvent(new PodcastSiteGeneratedEvent(new Date()));
-					log.info("publishing an event for the podcast site-generation...");
-					return null;
-				}).get();
+				.get();
 	}
 
 	@SneakyThrows
@@ -94,11 +97,9 @@ class PodbeanIntegrationConfiguration {
 				+ " and publish it to the Podbean API.");
 		var s3Key = podcast.getS3OutputFileName();
 		var s3Object = s3Service.downloadOutputFile(s3Key);
-
 		FileCopyUtils.copy(s3Object.getObjectContent(), new FileOutputStream(file));
 		Assert.isTrue(file.exists() && file.length() > 0,
 				"the file could not be downloaded to " + file.getAbsolutePath() + ".");
-		log.info("the size of the downloaded file is " + file.length());
 	}
 
 	@Bean

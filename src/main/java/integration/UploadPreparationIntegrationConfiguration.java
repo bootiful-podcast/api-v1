@@ -66,6 +66,8 @@ class UploadPreparationIntegrationConfiguration {
 					new File(properties.getS3().getStagingDirectory(),
 							UUID.randomUUID().toString()));
 			var files = UnzipUtils.unzip(file, stagingDirectoryForRequest);
+			Assert.isTrue(!file.exists() || file.delete(), "the uploaded file "
+					+ file.getAbsolutePath() + " could not be deleted.");
 			var manifest = files.stream()
 					.filter(fn -> fn.getName().toLowerCase().endsWith("manifest.xml"))
 					.collect(Collectors.toList());
@@ -115,27 +117,29 @@ class UploadPreparationIntegrationConfiguration {
 			});
 			log.info("end: s3 artifact upload " + file.getAbsolutePath());
 			var role = messageHeaders.get(ASSET_TYPE, String.class);
-			log.info("the asset type is " + role);
-			log.info("the s3 path is " + s3Path);
+			log.info("the asset type is '" + role + "' and the s3 path is '" + s3Path
+					+ "'");
 			var uriAsString = s3Path.toString();
-			publisher.publishEvent(new PodcastArtifactsUploadedToProcessorEvent(uid, role,
-					uriAsString, file));
+			this.publisher.publishEvent(new PodcastArtifactsUploadedToProcessorEvent(uid,
+					role, uriAsString, file));
+			Assert.isTrue(!file.exists() || file.delete(),
+					"the file " + file.getAbsolutePath() + " has been uploaded so we "
+							+ "are purging it from the local file system.");
 			return MessageBuilder //
 					.withPayload(file) //
+					.setHeader(ARTIFACT_STAGING_DIRECTORY,
+							messageHeaders.get(ARTIFACT_STAGING_DIRECTORY))
 					.setHeader(S3_PATH, uriAsString) //
 					.build();
 		};
-		this.rmqProcessorAggregateArtifactsTransformer = (payload, headers) -> {
-			var json = jsonService.toJson(payload);
-			var builder = MessageBuilder.withPayload(json);
-			Set.of(UID, PROCESSOR_REQUEST_INTERVIEW, PROCESSOR_REQUEST_INTRODUCTION)
-					.forEach(header -> builder.setHeader(header, payload.get(header)));
-			return builder.build();
-		};
 		this.aggregator = spec -> spec.outputProcessor(group -> {
-			var messages = group.getMessages();
 			var request = new HashMap<String, String>();
+			var messages = group.getMessages();
 			messages.forEach(msg -> {
+				var packageManifest = (PodcastPackageManifest) msg.getHeaders()
+						.get(PACKAGE_MANIFEST);
+				log.info("aggregating " + PodcastPackageManifest.class.getName()
+						+ " with UID " + packageManifest.getUid());
 				establishHeaderIfMatches(request, msg, IS_INTRODUCTION_FILE,
 						PROCESSOR_REQUEST_INTRODUCTION);
 				establishHeaderIfMatches(request, msg, IS_INTERVIEW_FILE,
@@ -144,9 +148,24 @@ class UploadPreparationIntegrationConfiguration {
 						PodcastPackageManifest.class);
 				var uid = Objects.requireNonNull(manifest).getUid();
 				request.put("uid", uid);
+				var stagingDirectory = (File) msg.getHeaders()
+						.get(ARTIFACT_STAGING_DIRECTORY);
+				Assert.isTrue(
+						!Objects.requireNonNull(stagingDirectory).exists()
+								|| FileUtils.deleteDirectoryRecursively(stagingDirectory),
+						"the staging directory " + stagingDirectory.getAbsolutePath()
+								+ " could not be deleted.");
 			});
+
 			return request;
 		});
+		this.rmqProcessorAggregateArtifactsTransformer = (payload, headers) -> {
+			var json = jsonService.toJson(payload);
+			var builder = MessageBuilder.withPayload(json);
+			Set.of(UID, PROCESSOR_REQUEST_INTERVIEW, PROCESSOR_REQUEST_INTRODUCTION)
+					.forEach(header -> builder.setHeader(header, payload.get(header)));
+			return builder.build();
+		};
 	}
 
 	@Bean

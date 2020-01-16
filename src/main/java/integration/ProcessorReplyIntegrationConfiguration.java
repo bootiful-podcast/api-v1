@@ -29,8 +29,8 @@ import java.util.Optional;
  *
  * @author <a href="mailto:josh@joshlong.com">Josh Long</a>
  */
-@Configuration
 @Log4j2
+@Configuration
 class ProcessorReplyIntegrationConfiguration {
 
 	private final ApplicationEventPublisher publisher;
@@ -100,7 +100,8 @@ class ProcessorReplyIntegrationConfiguration {
 					return byUid.orElse(null);
 				})//
 				.transform(Podcast::getUid)//
-				.handle(processorOutboundAdapter).get();//
+				.handle(processorOutboundAdapter)//
+				.get();//
 	}
 
 	private void recordProcessedFilesToDatabase(String uid, String outputBucketName,

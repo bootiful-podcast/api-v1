@@ -104,6 +104,7 @@ class PipelineHttpController {
 		var newFile = new File(this.file, uid);
 		file.transferTo(newFile);
 		FileUtils.assertFileExists(newFile);
+		log.info("the newly POST'd file lives at " + newFile.getAbsolutePath() + '.');
 		Assert.isTrue(this.service.launchPipeline(uid, newFile), "the pipeline says no.");
 		var location = URI.create("/podcasts/" + uid + "/status");
 		log.info("sending status location as : '" + location + "'");
