@@ -8,6 +8,7 @@ import integration.database.PodcastRepository;
 import integration.email.NotificationService;
 import integration.events.PodcastProcessedEvent;
 import integration.utils.JsonHelper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -30,14 +31,11 @@ import java.util.Optional;
  * @author <a href="mailto:josh@joshlong.com">Josh Long</a>
  */
 @Log4j2
+@RequiredArgsConstructor
 @Configuration
 class Step2ProcessorReplyIntegrationConfiguration {
 
 	private final ApplicationEventPublisher publisher;
-
-	Step2ProcessorReplyIntegrationConfiguration(ApplicationEventPublisher publisher) {
-		this.publisher = publisher;
-	}
 
 	@Bean
 	IntegrationFlow processorReplyPipeline(PipelineProperties properties,

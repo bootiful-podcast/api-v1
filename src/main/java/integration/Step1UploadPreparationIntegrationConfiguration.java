@@ -107,19 +107,6 @@ class Step1UploadPreparationIntegrationConfiguration {
 				if (StringUtils.hasText(assetType)) {
 					builder.setHeader(ASSET_TYPE, assetType);
 				}
-
-				/*
-				 * uploadPackageManifest.getMedia().forEach(media -> { var interview =
-				 * f.getName().contains(media.getInterview()); var intro =
-				 * f.getName().contains(media.getIntroduction()); var type = interview ?
-				 * AssetTypes.TYPE_INTERVIEW : (intro ? AssetTypes.TYPE_INTRODUCTION :
-				 * null); var mediaMap = Map.of(// IS_INTERVIEW_FILE, interview, //
-				 * IS_INTRODUCTION_FILE, intro, // ARTIFACT_STAGING_DIRECTORY,
-				 * stagingDirectoryForRequest// ); if (StringUtils.hasText(type)) {
-				 * builder.setHeader(ASSET_TYPE, type); }
-				 * mediaMap.forEach(builder::setHeader); });
-				 */
-
 				return builder.build();
 			});
 			return stream.collect(Collectors.toList());

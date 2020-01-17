@@ -35,9 +35,10 @@ class PipelineService {
 	}
 
 	private URI uriFromPodcast(URI server, Optional<Podcast> podcast) {
-		var path = podcast.map(p -> "/podcasts/" + p.getUid() + "/output")
+		var path = podcast//
+				.map(p -> "/podcasts/" + p.getUid() + "/produced-audio")//
 				.orElseThrow(() -> new IllegalArgumentException(
-						"you must provide a valid podcast identifier"));
+						"you must provide a valid podcast identifier"));//
 		return URI.create(server.toString() + path);
 	}
 

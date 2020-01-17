@@ -25,11 +25,17 @@ public class Podcast {
 
 	private String title, description, notes, transcript;
 
-	@Column(name = "s3_fqn_uri")
-	private String mediaS3Uri;
+	@Column(name = "s3_audio_uri")
+	private String s3AudioUri;
 
-	@Column(name = "s3_output_file_name")
-	private String s3OutputFileName;
+	@Column(name = "s3_photo_uri")
+	private String s3PhotoUri;
+
+	@Column(name = "s3_audio_file_name")
+	private String s3AudioFileName;
+
+	@Column(name = "s3_photo_file_name")
+	private String s3PhotoFileName;
 
 	@Column(name = "podbean_draft_created")
 	private Date podbeanDraftCreated;
@@ -54,21 +60,14 @@ public class Podcast {
 
 	@Override
 	public String toString() {
-	//@formatter:off
-    return "Podcast{" +
-        "id=" + id +
-        ", uid='" + uid + '\'' +
-        ", title='" + title + '\'' +
-        ", description='" + description + '\'' +
-        ", notes='" + notes + '\'' +
-        ", transcript='" + transcript + '\'' +
-        ", mediaS3Uri='" + mediaS3Uri + '\'' +
-        ", s3OutputFileName='" + s3OutputFileName + '\'' +
-        ", podbeanDraftCreated=" + podbeanDraftCreated +
-        ", podbeanDraftPublished=" + podbeanDraftPublished +
-        ", date=" + date +
-        '}';
-    //@formatter:on
+		return "Podcast{" + "id=" + id + ", uid='" + uid + '\'' + ", title='" + title
+				+ '\'' + ", description='" + description + '\'' + ", notes='" + notes
+				+ '\'' + ", transcript='" + transcript + '\'' + ", mediaS3Uri='"
+				+ s3AudioUri + '\'' + ", s3OutputFileName='" + s3AudioFileName + '\''
+				+ ", s3EpisodePhoto='" + s3PhotoFileName + '\'' + ", podbeanDraftCreated="
+				+ podbeanDraftCreated + ", podbeanDraftPublished=" + podbeanDraftPublished
+				+ ", podbeanMediaUri='" + podbeanMediaUri + '\'' + ", date=" + date
+				+ ", links=" + links + ", media=" + media + '}';
 	}
 
 }

@@ -71,18 +71,28 @@ class Recorder {
 	@EventListener
 	public void artifactsUploadedToS3(PodcastArtifactsUploadedToProcessorEvent event) {
 		// record data
-		var files = event.getSource();
-		var uid = files.getUid();
-		repository.findByUid(uid).ifPresentOrElse(podcast -> {
-			var fileMetadata = event.getSource();
-			var uri = fileMetadata.getS3Uri();
-			var type = fileMetadata.getType();
-			podcast.getMedia().stream().filter(m -> m.getType().equalsIgnoreCase(type))
-					.forEach(m -> m.setHref(uri));
-			repository.save(podcast);
-			log.info(event.getClass().getName() + " : " + "s3 artifact uploaded for file "
-					+ fileMetadata.getType() + " for project with UID " + uid
-					+ " which is an asset of type " + type);
+		var fileMetadata = event.getSource();
+		var uid = fileMetadata.getUid();
+		var type = fileMetadata.getType();
+		var uri = fileMetadata.getS3Uri();
+
+		this.repository.findByUid(uid).ifPresentOrElse(podcast -> {
+			if (type != null) {
+				// happens when the file is manifest.xml,
+				// which we don't really need to preserve.
+				if (type.equalsIgnoreCase(AssetTypes.TYPE_PHOTO)) {
+					podcast.setS3PhotoUri(uri);
+					podcast.setS3PhotoFileName(fileMetadata.getFile().getName());
+				}
+				podcast.getMedia().stream()
+						.filter(m -> m.getType().equalsIgnoreCase(type))
+						.forEach(m -> m.setHref(uri));
+				this.repository.save(podcast);
+				log.info(event.getClass().getName() + " : "
+						+ "s3 artifact uploaded for file " + fileMetadata.getType()
+						+ " for project with UID " + uid + " which is an asset of type "
+						+ type);
+			}
 		}, missingPodcastRunnable(uid));
 
 		var stagingDirectory = event.getSource().getFile();
@@ -99,8 +109,8 @@ class Recorder {
 		repository.findByUid(uid).ifPresentOrElse(podcast -> {
 			var uri = s3Service.createS3Uri(event.getBucketName(), "",
 					event.getFileName());
-			podcast.setMediaS3Uri(uri.toString());
-			podcast.setS3OutputFileName(event.getFileName());
+			podcast.setS3AudioUri(uri.toString());
+			podcast.setS3AudioFileName(event.getFileName());
 			repository.save(podcast);
 		}, missingPodcastRunnable(uid));
 	}

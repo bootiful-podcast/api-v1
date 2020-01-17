@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.net.URI;
 import java.util.Map;
+import java.util.function.Function;
 
 @Log4j2
 @RestController
@@ -51,7 +52,7 @@ class PipelineHttpController {
 		var byUid = podcastRepository.findByUid(uid);
 		var response = byUid.map(podcast -> {
 			Map<String, String> statusMap;
-			if (null != podcast.getMediaS3Uri()) {
+			if (null != podcast.getS3AudioUri()) {
 				statusMap = Map.of( //
 						"media-url",
 						service.buildMediaUriForPodcastById(podcast.getId()).toString(), //
@@ -68,12 +69,11 @@ class PipelineHttpController {
 				.orElse(ResponseEntity.noContent().build());
 	}
 
-	@SneakyThrows
-	@GetMapping("/podcasts/{uid}/output")
-	ResponseEntity<InputStreamResource> getOutputMedia(@PathVariable String uid) {
+	private ResponseEntity<InputStreamResource> readResource(String uid,
+			Function<Podcast, String> func) {
 		return this.podcastRepository //
 				.findByUid(uid)//
-				.map(Podcast::getS3OutputFileName) //
+				.map(func) //
 				.map(s3Key -> new Object() {
 					S3Object object = s3.downloadOutputFile(s3Key);
 
@@ -83,6 +83,19 @@ class PipelineHttpController {
 				.map(record -> this.doDownloadFile(record.object, uid, record.key)) //
 				.orElseThrow(() -> new IllegalArgumentException(
 						"couldn't find the Podcast associated with UID  " + uid));
+
+	}
+
+	@SneakyThrows
+	@GetMapping("/podcasts/{uid}/profile-photo")
+	ResponseEntity<InputStreamResource> getProfilePhotoMedia(@PathVariable String uid) {
+		return this.readResource(uid, Podcast::getS3PhotoFileName);
+	}
+
+	@SneakyThrows
+	@GetMapping("/podcasts/{uid}/produced-audio")
+	ResponseEntity<InputStreamResource> getProducedAudioMedia(@PathVariable String uid) {
+		return this.readResource(uid, Podcast::getS3AudioFileName);
 	}
 
 	@SneakyThrows
