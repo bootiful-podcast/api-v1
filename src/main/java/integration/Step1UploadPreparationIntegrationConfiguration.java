@@ -12,6 +12,7 @@ import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.AggregatorSpec;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -23,9 +24,13 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -49,6 +54,8 @@ class Step1UploadPreparationIntegrationConfiguration {
 	private final Consumer<AggregatorSpec> aggregator;
 
 	private final PipelineProperties properties;
+
+	private final GenericHandler<Object> uploadProfilePhotoHandler;
 
 	private final Function<File, Collection<Message<File>>> unzipSplitter;
 
@@ -80,21 +87,24 @@ class Step1UploadPreparationIntegrationConfiguration {
 			var stream = files.stream().map(f -> {
 
 				var fileName = f.getName();
-
-				boolean isIntro = fileName.equalsIgnoreCase(
+				var isIntro = fileName.equalsIgnoreCase(
 						uploadPackageManifest.getIntroduction().getSrc());
-				boolean isInterview = fileName
+				var isInterview = fileName
 						.equalsIgnoreCase(uploadPackageManifest.getInterview().getSrc());
-				boolean isPhoto = fileName
+				var isPhoto = fileName
 						.equalsIgnoreCase(uploadPackageManifest.getPhoto().getSrc());
 
+				// i can't wait to use this with a smarter case statement
 				String assetType = null;
-				if (isPhoto)
+				if (isPhoto) {
 					assetType = AssetTypes.TYPE_PHOTO;
-				if (isInterview)
+				}
+				if (isInterview) {
 					assetType = AssetTypes.TYPE_INTERVIEW;
-				if (isIntro)
+				}
+				if (isIntro) {
 					assetType = AssetTypes.TYPE_INTRODUCTION;
+				}
 
 				var builder = MessageBuilder//
 						.withPayload(f)//
@@ -113,6 +123,7 @@ class Step1UploadPreparationIntegrationConfiguration {
 			});
 			return stream.collect(Collectors.toList());
 		};
+
 		this.s3UploadHandler = (file, messageHeaders) -> {
 			var contentType = messageHeaders.get(CONTENT_TYPE, String.class);
 			var manifest = Objects.requireNonNull(
@@ -127,12 +138,12 @@ class Step1UploadPreparationIntegrationConfiguration {
 				return s3.uploadInputFile(contentType, uid, file);
 			});
 			log.info("end: s3 artifact upload " + file.getAbsolutePath());
-			var role = messageHeaders.get(ASSET_TYPE, String.class);
-			log.info("the asset type is '" + role + "' and the s3 path is '" + s3Path
+			var assetType = messageHeaders.get(ASSET_TYPE, String.class);
+			log.info("the asset type is '" + assetType + "' and the s3 path is '" + s3Path
 					+ "'");
 			var uriAsString = s3Path.toString();
 			this.publisher.publishEvent(new PodcastArtifactsUploadedToProcessorEvent(uid,
-					role, uriAsString, file));
+					assetType, uriAsString, file));
 			Assert.isTrue(!file.exists() || file.delete(),
 					"the file " + file.getAbsolutePath() + " has been uploaded so we "
 							+ "are purging it from the local file system.");
@@ -143,20 +154,18 @@ class Step1UploadPreparationIntegrationConfiguration {
 					.setHeader(S3_PATH, uriAsString) //
 					.build();
 		};
+
 		this.aggregator = spec -> spec.outputProcessor(group -> {
 			var request = new HashMap<String, String>();
-			var messages = group.getMessages();
-			messages.forEach(msg -> {
-				var packageManifest = (PodcastPackageManifest) msg.getHeaders()
-						.get(PACKAGE_MANIFEST);
+			group.getMessages().forEach(msg -> {
+				var manifest = msg.getHeaders().get(PACKAGE_MANIFEST,
+						PodcastPackageManifest.class);
 				log.info("aggregating " + PodcastPackageManifest.class.getName()
-						+ " with UID " + packageManifest.getUid());
+						+ " with UID " + manifest.getUid());
 				establishHeaderIfMatches(request, msg, IS_INTRODUCTION_FILE,
 						PROCESSOR_REQUEST_INTRODUCTION);
 				establishHeaderIfMatches(request, msg, IS_INTERVIEW_FILE,
 						PROCESSOR_REQUEST_INTERVIEW);
-				var manifest = msg.getHeaders().get(PACKAGE_MANIFEST,
-						PodcastPackageManifest.class);
 				var uid = Objects.requireNonNull(manifest).getUid();
 				request.put("uid", uid);
 				var stagingDirectory = (File) msg.getHeaders()
@@ -167,9 +176,40 @@ class Step1UploadPreparationIntegrationConfiguration {
 						"the staging directory " + stagingDirectory.getAbsolutePath()
 								+ " could not be deleted.");
 			});
-
 			return request;
 		});
+
+		this.uploadProfilePhotoHandler = (o, messageHeaders) -> {
+			try {
+				log.info("entering the upload profile photo handler");
+				var manifest = messageHeaders.get(PACKAGE_MANIFEST,
+						PodcastPackageManifest.class);
+				var uid = Objects.requireNonNull(manifest).getUid();
+
+				// todo
+				// todo download the input file for the photo
+				var tmpFile = Files.createTempFile(uid, ".jpg").toFile();
+				try (var inputStream = s3
+						.downloadInputFile(uid, manifest.getPhoto().getSrc())
+						.getObjectContent();
+						var outputStream = new FileOutputStream(tmpFile)) {
+					FileCopyUtils.copy(inputStream, outputStream);
+					Assert.isTrue(tmpFile.exists(), "the profile photo '"
+							+ tmpFile.getAbsolutePath() + "' could not be downloaded");
+					var uploadOutputFile = s3.uploadOutputFile(MediaType.IMAGE_JPEG_VALUE,
+							uid, tmpFile);
+					log.info("uploaded the photo '" + tmpFile.getAbsolutePath()
+							+ "' to the output bucket. It has the URI '"
+							+ uploadOutputFile + "'");
+					return o;
+				}
+			}
+			catch (Exception e) {
+				ReflectionUtils.rethrowRuntimeException(e);
+			}
+			return o;
+		};
+
 		this.rmqProcessorAggregateArtifactsTransformer = (payload, headers) -> {
 			var json = jsonService.toJson(payload);
 			var builder = MessageBuilder.withPayload(json);
@@ -229,6 +269,7 @@ class Step1UploadPreparationIntegrationConfiguration {
 				.split(File.class, this.unzipSplitter) //
 				.handle(File.class, this.s3UploadHandler) //
 				.aggregate(this.aggregator) //
+				.handle(this.uploadProfilePhotoHandler)
 				.handle(Map.class, this.rmqProcessorAggregateArtifactsTransformer)//
 				.handle(processorOutboundAdapter)//
 				.get();

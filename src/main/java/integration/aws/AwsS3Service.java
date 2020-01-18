@@ -1,10 +1,7 @@
 package integration.aws;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.*;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -44,9 +41,17 @@ public class AwsS3Service {
 	}
 
 	public S3Object download(String bucketName, String folder, String key) {
-		var newKey = folder == null ? key : folder + '/' + key;
-		var request = new GetObjectRequest(bucketName, newKey);
-		return this.s3.getObject(request);
+		try {
+			log.info(String.format(
+					"trying to download from bucket %s with key based on folder %s and key %s",
+					bucketName, folder, key));
+			var newKey = folder == null ? key : folder + '/' + key;
+			var request = new GetObjectRequest(bucketName, newKey);
+			return this.s3.getObject(request);
+		}
+		catch (AmazonS3Exception e) {
+			return download(bucketName, null, key);
+		}
 	}
 
 	@SneakyThrows
@@ -55,8 +60,8 @@ public class AwsS3Service {
 	}
 
 	@SneakyThrows
-	public URI uploadOutputFile(String contentType, File file) {
-		return this.upload(this.outputBucketName, contentType, "", file);
+	public URI uploadOutputFile(String contentType, String folder, File file) {
+		return this.upload(this.outputBucketName, contentType, folder, file);
 	}
 
 	@SneakyThrows
