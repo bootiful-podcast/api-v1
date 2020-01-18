@@ -112,14 +112,14 @@ class PipelineHttpController {
 	@GetMapping("/podcasts/{uid}/profile-photo")
 	ResponseEntity<InputStreamResource> getProfilePhotoMedia(@PathVariable String uid) {
 		return this.readResource(this.photoContentType, uid, Podcast::getS3PhotoFileName,
-				s3::downloadOutputFile);
+				fileName -> s3.downloadInputFile(uid, fileName));
 	}
 
 	@SneakyThrows
 	@GetMapping("/podcasts/{uid}/produced-audio")
 	ResponseEntity<InputStreamResource> getProducedAudioMedia(@PathVariable String uid) {
 		return this.readResource(this.audioContentType, uid, Podcast::getS3AudioFileName,
-				s3::downloadOutputFile);
+				fileName -> s3.downloadOutputFile(uid, fileName));
 	}
 
 	@PostMapping("/podcasts/{uid}")

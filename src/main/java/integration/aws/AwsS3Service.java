@@ -36,18 +36,16 @@ public class AwsS3Service {
 	}
 
 	public S3Object downloadInputFile(String folder, String fn) {
-		log.info("downloading from the bucket '" + inputBucketName + "' with the folder '"
-				+ folder + "' and the key '" + fn + "'");
 		return this.download(this.inputBucketName, folder, fn);
 	}
 
-	public S3Object downloadOutputFile(String fn) {
-		return this.download(this.outputBucketName, null, fn);
+	public S3Object downloadOutputFile(String folder, String fn) {
+		return this.download(this.outputBucketName, folder, fn);
 	}
 
-	public S3Object download(String bucketName, String nestedBucketFolder, String key) {
-		var bn = (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder);
-		var request = new GetObjectRequest(bucketName, bn + key);
+	public S3Object download(String bucketName, String folder, String key) {
+		var newKey = folder == null ? key : folder + '/' + key;
+		var request = new GetObjectRequest(bucketName, newKey);
 		return this.s3.getObject(request);
 	}
 
@@ -57,8 +55,7 @@ public class AwsS3Service {
 	}
 
 	@SneakyThrows
-	public URI uploadOutputFile(String contentType,
-			/* String nestedBucketFolder, */ File file) {
+	public URI uploadOutputFile(String contentType, File file) {
 		return this.upload(this.outputBucketName, contentType, "", file);
 	}
 

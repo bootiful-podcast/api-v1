@@ -78,7 +78,9 @@ class Step1UploadPreparationIntegrationConfiguration {
 			this.publisher
 					.publishEvent(new PodcastArchiveUploadedEvent(uploadPackageManifest));
 			var stream = files.stream().map(f -> {
+
 				var fileName = f.getName();
+
 				boolean isIntro = fileName.equalsIgnoreCase(
 						uploadPackageManifest.getIntroduction().getSrc());
 				boolean isInterview = fileName
