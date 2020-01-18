@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,7 +37,9 @@ class PipelineHttpController {
 
 	private final String finishedMessage = "finished processing";
 
-	private final MediaType mediaContentType = MediaType
+	private final MediaType photoContentType = MediaType.IMAGE_JPEG;
+
+	private final MediaType audioContentType = MediaType
 			.parseMediaType("binary/octet-stream");
 
 	PipelineHttpController(PipelineProperties props, AwsS3Service s3,
@@ -69,18 +72,37 @@ class PipelineHttpController {
 				.orElse(ResponseEntity.noContent().build());
 	}
 
-	private ResponseEntity<InputStreamResource> readResource(String uid,
-			Function<Podcast, String> func) {
+	private ResponseEntity<InputStreamResource> readResource(MediaType mediaContentType,
+			String uid,
+			Function<Podcast, String> functionToExtractAFileNameKeyGivenAPodcast,
+			Function<String, S3Object> produceS3Object) {
 		return this.podcastRepository //
 				.findByUid(uid)//
-				.map(func) //
-				.map(s3Key -> new Object() {
-					S3Object object = s3.downloadOutputFile(s3Key);
+				.map(functionToExtractAFileNameKeyGivenAPodcast) //
+				.map(s3Key -> {
+					try {
+						return new Object() {
+							S3Object object = produceS3Object.apply(s3Key);
 
-					String key = s3Key;
+							String key = s3Key;
 
+						};
+					}
+					catch (Exception e) {
+						ReflectionUtils.rethrowRuntimeException(e);
+					}
+					return null;
 				})//
-				.map(record -> this.doDownloadFile(record.object, uid, record.key)) //
+				.map(record -> {
+					var inputStream = record.object.getObjectContent();
+					var inputStreamResource = new InputStreamResource(inputStream);
+					return ResponseEntity.ok()//
+							.header("X-Podcast-UID", uid)//
+							.contentType(mediaContentType)//
+							.header(HttpHeaders.CONTENT_DISPOSITION,
+									"attachment; filename=\"" + record.key + "\"")//
+							.body(inputStreamResource);
+				}) //
 				.orElseThrow(() -> new IllegalArgumentException(
 						"couldn't find the Podcast associated with UID  " + uid));
 
@@ -89,26 +111,15 @@ class PipelineHttpController {
 	@SneakyThrows
 	@GetMapping("/podcasts/{uid}/profile-photo")
 	ResponseEntity<InputStreamResource> getProfilePhotoMedia(@PathVariable String uid) {
-		return this.readResource(uid, Podcast::getS3PhotoFileName);
+		return this.readResource(this.photoContentType, uid, Podcast::getS3PhotoFileName,
+				s3::downloadOutputFile);
 	}
 
 	@SneakyThrows
 	@GetMapping("/podcasts/{uid}/produced-audio")
 	ResponseEntity<InputStreamResource> getProducedAudioMedia(@PathVariable String uid) {
-		return this.readResource(uid, Podcast::getS3AudioFileName);
-	}
-
-	@SneakyThrows
-	private ResponseEntity<InputStreamResource> doDownloadFile(S3Object object,
-			String uid, String key) {
-		var inputStream = object.getObjectContent();
-		var inputStreamResource = new InputStreamResource(inputStream);
-		return ResponseEntity.ok()//
-				.header("X-Podcast-UID", uid)//
-				.contentType(this.mediaContentType)//
-				.header(HttpHeaders.CONTENT_DISPOSITION,
-						"attachment; filename=\"" + key + "\"")//
-				.body(inputStreamResource);
+		return this.readResource(this.audioContentType, uid, Podcast::getS3AudioFileName,
+				s3::downloadOutputFile);
 	}
 
 	@PostMapping("/podcasts/{uid}")

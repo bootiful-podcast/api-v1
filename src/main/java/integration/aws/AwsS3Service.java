@@ -18,7 +18,7 @@ import java.net.URI;
 @RequiredArgsConstructor
 public class AwsS3Service {
 
-	private final String uploadBucketName;
+	private final String inputBucketName;
 
 	private final String outputBucketName;
 
@@ -35,6 +35,12 @@ public class AwsS3Service {
 		return URI.create(uri);
 	}
 
+	public S3Object downloadInputFile(String folder, String fn) {
+		log.info("downloading from the bucket '" + inputBucketName + "' with the folder '"
+				+ folder + "' and the key '" + fn + "'");
+		return this.download(this.inputBucketName, folder, fn);
+	}
+
 	public S3Object downloadOutputFile(String fn) {
 		return this.download(this.outputBucketName, null, fn);
 	}
@@ -46,18 +52,32 @@ public class AwsS3Service {
 	}
 
 	@SneakyThrows
-	public URI upload(String contentType, String nestedBucketFolder, File file) {
+	public URI uploadInputFile(String contentType, String nestedBucketFolder, File file) {
+		return this.upload(this.inputBucketName, contentType, nestedBucketFolder, file);
+	}
+
+	@SneakyThrows
+	public URI uploadOutputFile(String contentType,
+			/* String nestedBucketFolder, */ File file) {
+		return this.upload(this.outputBucketName, contentType, "", file);
+	}
+
+	@SneakyThrows
+	private URI upload(String bucketName, String contentType, String nestedBucketFolder,
+			File file) {
 		if (file.length() > 0) {
+			log.info("trying to upload the file " + file.getAbsolutePath() + " to bucket "
+					+ bucketName + " with content type " + contentType
+					+ " and nested folder " + nestedBucketFolder);
 			var objectMetadata = new ObjectMetadata();
 			objectMetadata.setContentType(contentType);
 			objectMetadata.setContentLength(file.length());
-			var request = new PutObjectRequest(this.uploadBucketName
+			var request = new PutObjectRequest(bucketName
 					+ (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder),
 					file.getName(), file);
 			var putObjectResult = this.s3.putObject(request);
 			Assert.notNull(putObjectResult, "the S3 file hasn't been uploaded");
-			return this.createS3Uri(this.uploadBucketName, nestedBucketFolder,
-					file.getName());
+			return this.createS3Uri(bucketName, nestedBucketFolder, file.getName());
 		}
 		return null;
 	}

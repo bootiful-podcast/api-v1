@@ -122,7 +122,7 @@ class Step1UploadPreparationIntegrationConfiguration {
 				log.info("trying to upload " + file.getAbsolutePath()
 						+ " with content-type " + contentType + " with UID " + uid
 						+ ", attempt #" + context.getRetryCount());
-				return s3.upload(contentType, uid, file);
+				return s3.uploadInputFile(contentType, uid, file);
 			});
 			log.info("end: s3 artifact upload " + file.getAbsolutePath());
 			var role = messageHeaders.get(ASSET_TYPE, String.class);
