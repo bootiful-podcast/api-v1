@@ -1,7 +1,6 @@
 package integration.utils;
 
 import lombok.SneakyThrows;
-import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
@@ -12,14 +11,18 @@ import java.io.File;
 @Log4j2
 public abstract class FileUtils {
 
-	public static String extensionFor(File file) {
-		var name = file.getName();
-		var lastIndexOf = name.lastIndexOf(".");
-		var trim = name.substring(lastIndexOf).toLowerCase().trim();
+	public static String extensionFor(String fileName) {
+		var lastIndexOf = fileName.lastIndexOf(".");
+		var trim = fileName.substring(lastIndexOf).toLowerCase().trim();
 		if (trim.startsWith(".")) {
 			return trim.substring(1);
 		}
 		return trim;
+	}
+
+	public static String extensionFor(File file) {
+		var name = file.getName();
+		return extensionFor(name);
 	}
 
 	@SneakyThrows

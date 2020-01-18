@@ -7,9 +7,6 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import integration.PipelineProperties;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.FileCopyUtils;
 
@@ -40,7 +37,6 @@ public class AwsTest {
 				.withRegion(Regions.fromName(region)).build();
 	}
 
-	@Test
 	public void download() throws Exception {
 		var amazonS3 = amazonS3(System.getenv("AWS_ACCESS_KEY_ID"),
 				System.getenv("AWS_SECRET_ACCESS_KEY"), System.getenv("AWS_REGION"));
@@ -54,14 +50,6 @@ public class AwsTest {
 				var fout = new FileOutputStream(file)) {
 			FileCopyUtils.copy(fin, fout);
 		}
-	}
-
-	@Before
-	public void setUp() throws Exception {
-	}
-
-	@After
-	public void tearDown() throws Exception {
 	}
 
 }

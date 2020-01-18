@@ -30,7 +30,6 @@ import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -168,8 +167,8 @@ class Step1UploadPreparationIntegrationConfiguration {
 						PROCESSOR_REQUEST_INTERVIEW);
 				var uid = Objects.requireNonNull(manifest).getUid();
 				request.put("uid", uid);
-				var stagingDirectory = (File) msg.getHeaders()
-						.get(ARTIFACT_STAGING_DIRECTORY);
+				var stagingDirectory = msg.getHeaders().get(ARTIFACT_STAGING_DIRECTORY,
+						File.class);
 				Assert.isTrue(
 						!Objects.requireNonNull(stagingDirectory).exists()
 								|| FileUtils.deleteDirectoryRecursively(stagingDirectory),
@@ -185,10 +184,13 @@ class Step1UploadPreparationIntegrationConfiguration {
 				var manifest = messageHeaders.get(PACKAGE_MANIFEST,
 						PodcastPackageManifest.class);
 				var uid = Objects.requireNonNull(manifest).getUid();
-
-				// todo
-				// todo download the input file for the photo
-				var tmpFile = Files.createTempFile(uid, ".jpg").toFile();
+				var ext = FileUtils.extensionFor(manifest.getPhoto().getSrc());
+				var stagingDirectory = messageHeaders.get(ARTIFACT_STAGING_DIRECTORY,
+						File.class);
+				var tmpFile = new File(stagingDirectory, uid + "." + ext);
+				var parent = tmpFile.getParentFile();
+				Assert.isTrue(parent.exists() || parent.mkdirs(), "the parent directory '"
+						+ parent.getAbsolutePath() + "' does not exist");
 				try (var inputStream = s3
 						.downloadInputFile(uid, manifest.getPhoto().getSrc())
 						.getObjectContent();
