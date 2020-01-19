@@ -1,6 +1,6 @@
 package integration.aws;
 
-import integration.utils.FileUtils;
+import integration.utils.CopyUtils;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.SpringApplication;
@@ -26,7 +26,7 @@ class AwsEnvironmentPostProcessor implements EnvironmentPostProcessor {
 	private static void readFileIntoEnvironment(File file, String psPrefix,
 			ConfigurableEnvironment environment, Function<String, String> mapper) {
 
-		FileUtils.assertFileExists(file);
+		CopyUtils.assertFileExists(file);
 		try (var reader = new FileReader(file)) {
 			var propertyProperties = new Properties();
 			propertyProperties.load(reader);

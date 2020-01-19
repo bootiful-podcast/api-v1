@@ -7,7 +7,7 @@ import integration.aws.AwsS3Service;
 import integration.database.Podcast;
 import integration.database.PodcastRepository;
 import integration.events.PodcastPublishedToPodbeanEvent;
-import integration.utils.FileUtils;
+import integration.utils.CopyUtils;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.core.AmqpTemplate;
@@ -55,7 +55,7 @@ class Step3PodbeanIntegrationConfiguration {
 				.get();
 
 		var podbeanDirectory = pipelineProperties.getPodbean().getPodbeanDirectory();
-		FileUtils.ensureDirectoryExists(podbeanDirectory);
+		CopyUtils.ensureDirectoryExists(podbeanDirectory);
 		return IntegrationFlows//
 				.from(amqpInboundAdapter)//
 				.transform(incoming -> repository.findByUid((String) incoming).get())

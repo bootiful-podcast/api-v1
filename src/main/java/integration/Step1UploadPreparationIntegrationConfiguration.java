@@ -4,7 +4,7 @@ import fm.bootifulpodcast.rabbitmq.RabbitMqHelper;
 import integration.aws.AwsS3Service;
 import integration.events.PodcastArchiveUploadedEvent;
 import integration.events.PodcastArtifactsUploadedToProcessorEvent;
-import integration.utils.FileUtils;
+import integration.utils.CopyUtils;
 import integration.utils.JsonHelper;
 import integration.utils.UnzipUtils;
 import lombok.extern.log4j.Log4j2;
@@ -67,7 +67,7 @@ class Step1UploadPreparationIntegrationConfiguration {
 		this.publisher = publisher;
 		var retryTemplate = new RetryTemplate();
 		this.unzipSplitter = (file) -> {
-			var stagingDirectoryForRequest = FileUtils.ensureDirectoryExists(
+			var stagingDirectoryForRequest = CopyUtils.ensureDirectoryExists(
 					new File(properties.getS3().getStagingDirectory(),
 							UUID.randomUUID().toString()));
 			var files = UnzipUtils.unzip(file, stagingDirectoryForRequest);
@@ -171,7 +171,7 @@ class Step1UploadPreparationIntegrationConfiguration {
 						File.class);
 				Assert.isTrue(
 						!Objects.requireNonNull(stagingDirectory).exists()
-								|| FileUtils.deleteDirectoryRecursively(stagingDirectory),
+								|| CopyUtils.deleteDirectoryRecursively(stagingDirectory),
 						"the staging directory " + stagingDirectory.getAbsolutePath()
 								+ " could not be deleted.");
 			});
@@ -184,7 +184,7 @@ class Step1UploadPreparationIntegrationConfiguration {
 				var manifest = messageHeaders.get(PACKAGE_MANIFEST,
 						PodcastPackageManifest.class);
 				var uid = Objects.requireNonNull(manifest).getUid();
-				var ext = FileUtils.extensionFor(manifest.getPhoto().getSrc());
+				var ext = CopyUtils.extensionFor(manifest.getPhoto().getSrc());
 				var stagingDirectory = messageHeaders.get(ARTIFACT_STAGING_DIRECTORY,
 						File.class);
 				var tmpFile = new File(stagingDirectory, uid + "." + ext);

@@ -7,11 +7,16 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import integration.PipelineProperties;
+import integration.utils.CopyUtils;
+import org.junit.Assert;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.util.FileCopyUtils;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 
 import java.io.File;
-import java.io.FileOutputStream;
+import java.util.Arrays;
 
 public class AwsTest {
 
@@ -37,18 +42,33 @@ public class AwsTest {
 				.withRegion(Regions.fromName(region)).build();
 	}
 
-	public void download() throws Exception {
-		var amazonS3 = amazonS3(System.getenv("AWS_ACCESS_KEY_ID"),
-				System.getenv("AWS_SECRET_ACCESS_KEY"), System.getenv("AWS_REGION"));
-		var amazonS3Service = new AwsS3Service("podcast-input-bucket",
-				"podcast-output-bucket", amazonS3);
-		var uid = "bd471b8c-fd55-4848-9184-91fca1630a41";
-		var s3Object = amazonS3Service.downloadInputFile(uid, "dave-and-i.jpg");
-		var file = new File(new File(System.getProperty("user.home"), "Desktop"),
-				"file.jpg");
-		try (var fin = s3Object.getObjectContent();
-				var fout = new FileOutputStream(file)) {
-			FileCopyUtils.copy(fin, fout);
+	private final Resource resource = new ClassPathResource("/sample-image.jpg");
+
+	@Test
+	public void uploadAndDownload() throws Exception {
+		var sampleImageBeforeUpload = File.createTempFile("sample-image-before-upload",
+				".jpg");
+		var sampleImageAfterUpload = File.createTempFile("sample-image-after-upload",
+				".jpg");
+
+		try {
+			var amazonS3 = amazonS3(System.getenv("AWS_ACCESS_KEY_ID"),
+					System.getenv("AWS_SECRET_ACCESS_KEY"), System.getenv("AWS_REGION"));
+			var amazonS3Service = new AwsS3Service("podcast-input-bucket",
+					"podcast-output-bucket", amazonS3);
+
+			CopyUtils.copy(this.resource.getInputStream(), sampleImageBeforeUpload);
+			amazonS3Service.uploadInputFile(MediaType.IMAGE_JPEG_VALUE, "test",
+					sampleImageBeforeUpload);
+			var s3Object = amazonS3Service.downloadInputFile("test",
+					sampleImageBeforeUpload.getName());
+			CopyUtils.copy(s3Object.getObjectContent(), sampleImageAfterUpload);
+			Assert.assertEquals(sampleImageBeforeUpload.length(),
+					sampleImageAfterUpload.length());
+		}
+		finally {
+			Arrays.asList(sampleImageAfterUpload, sampleImageBeforeUpload)
+					.forEach(File::delete);
 		}
 	}
 

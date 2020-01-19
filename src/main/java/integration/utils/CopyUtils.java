@@ -6,10 +6,35 @@ import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.FileSystemUtils;
 
-import java.io.File;
+import java.io.*;
 
 @Log4j2
-public abstract class FileUtils {
+public abstract class CopyUtils {
+
+	@SneakyThrows
+	public static void copy(InputStream in, OutputStream out) {
+		try (in; out) {
+			FileCopyUtils.copy(in, out);
+		}
+	}
+
+	@SneakyThrows
+	public static void copy(InputStream in, File out) {
+		try (var fin = in instanceof BufferedInputStream ? in
+				: new BufferedInputStream(in);
+				var fout = new BufferedOutputStream(new FileOutputStream(out))) {
+			copy(fin, fout);
+		}
+	}
+
+	@SneakyThrows
+	public static void copy(File in, OutputStream out) {
+		try (var fin = new BufferedInputStream(new FileInputStream(in));
+				var fout = out instanceof BufferedOutputStream ? out
+						: new BufferedOutputStream(out)) {
+			copy(fin, fout);
+		}
+	}
 
 	public static String extensionFor(String fileName) {
 		var lastIndexOf = fileName.lastIndexOf(".");

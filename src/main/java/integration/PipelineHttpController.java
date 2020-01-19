@@ -4,7 +4,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import integration.aws.AwsS3Service;
 import integration.database.Podcast;
 import integration.database.PodcastRepository;
-import integration.utils.FileUtils;
+import integration.utils.CopyUtils;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.io.InputStreamResource;
@@ -44,7 +44,7 @@ class PipelineHttpController {
 
 	PipelineHttpController(PipelineProperties props, AwsS3Service s3,
 			PodcastRepository repository, PipelineService service) {
-		this.file = FileUtils.ensureDirectoryExists(props.getS3().getStagingDirectory());
+		this.file = CopyUtils.ensureDirectoryExists(props.getS3().getStagingDirectory());
 		this.service = service;
 		this.s3 = s3;
 		this.podcastRepository = repository;
@@ -127,7 +127,7 @@ class PipelineHttpController {
 			@RequestParam("file") MultipartFile file) throws Exception {
 		var newFile = new File(this.file, uid);
 		file.transferTo(newFile);
-		FileUtils.assertFileExists(newFile);
+		CopyUtils.assertFileExists(newFile);
 		log.info("the newly POST'd file lives at " + newFile.getAbsolutePath() + '.');
 		Assert.isTrue(this.service.launchPipeline(uid, newFile), "the pipeline says no.");
 		var location = URI.create("/podcasts/" + uid + "/status");

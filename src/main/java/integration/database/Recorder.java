@@ -6,7 +6,7 @@ import integration.events.PodcastArchiveUploadedEvent;
 import integration.events.PodcastArtifactsUploadedToProcessorEvent;
 import integration.events.PodcastProcessedEvent;
 import integration.events.PodcastPublishedToPodbeanEvent;
-import integration.utils.FileUtils;
+import integration.utils.CopyUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.event.EventListener;
@@ -98,7 +98,7 @@ class Recorder {
 		var stagingDirectory = event.getSource().getFile();
 		Assert.isTrue(
 				!stagingDirectory.exists()
-						|| FileUtils.deleteDirectoryRecursively(stagingDirectory),
+						|| CopyUtils.deleteDirectoryRecursively(stagingDirectory),
 				"We couldn't delete the staging directory. This could imperil our free space.");
 	}
 
