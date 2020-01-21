@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Profile;
 class ServerUriResolverConfiguration {
 
 	@Bean
-	@Profile("default")
+	@Profile({ "default", "ci" })
 	LocalhostServerUriResolver localhostServerUriResolver() {
 		return new LocalhostServerUriResolver();
 	}
