@@ -39,9 +39,8 @@ public class PodcastPackageManifest {
 		}
 	}
 
-	public static PodcastPackageManifest from(String uid, String title,
-			String description, String introFileName, String interviewFileName,
-			String photoFileName) {
+	public static PodcastPackageManifest from(String uid, String title, String description, String introFileName,
+			String interviewFileName, String photoFileName) {
 		var pm = new PodcastPackageManifest();
 		pm.description = description;
 		pm.uid = uid;
@@ -64,12 +63,9 @@ public class PodcastPackageManifest {
 		var description = podcastElement.getElementsByTagName("description").item(0);
 		Arrays.asList(interview, intro, photo, description)
 				.forEach(e -> Assert.notNull(e, "the element must not be null"));
-		var introSrc = readAttributeFrom(Objects.requireNonNull(intro).getAttributes(),
-				"src");
-		var interviewSrc = readAttributeFrom(
-				Objects.requireNonNull(interview).getAttributes(), "src");
-		var photoSrc = readAttributeFrom(Objects.requireNonNull(photo).getAttributes(),
-				"src");
+		var introSrc = readAttributeFrom(Objects.requireNonNull(intro).getAttributes(), "src");
+		var interviewSrc = readAttributeFrom(Objects.requireNonNull(interview).getAttributes(), "src");
+		var photoSrc = readAttributeFrom(Objects.requireNonNull(photo).getAttributes(), "src");
 		var descriptionTxt = description.getTextContent().trim();
 		var uid = readAttributeFrom(podcastElement.getAttributes(), "uid");
 		var title = readAttributeFrom(podcastElement.getAttributes(), "title");

@@ -40,10 +40,8 @@ public class UnzipUtils {
 		var destFile = new File(destinationDir, zipEntry.getName());
 		var destDirPath = destinationDir.getCanonicalPath();
 		var destFilePath = destFile.getCanonicalPath();
-		var entryIsInTargetDirectory = destFilePath
-				.startsWith(destDirPath + File.separator);
-		Assert.isTrue(entryIsInTargetDirectory,
-				"Entry is outside of the target dir: " + zipEntry.getName());
+		var entryIsInTargetDirectory = destFilePath.startsWith(destDirPath + File.separator);
+		Assert.isTrue(entryIsInTargetDirectory, "Entry is outside of the target dir: " + zipEntry.getName());
 		return destFile;
 	}
 

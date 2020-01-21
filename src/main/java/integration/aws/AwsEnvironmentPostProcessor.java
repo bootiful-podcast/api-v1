@@ -23,8 +23,8 @@ import java.util.function.Function;
 class AwsEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
 	@SneakyThrows
-	private static void readFileIntoEnvironment(File file, String psPrefix,
-			ConfigurableEnvironment environment, Function<String, String> mapper) {
+	private static void readFileIntoEnvironment(File file, String psPrefix, ConfigurableEnvironment environment,
+			Function<String, String> mapper) {
 
 		CopyUtils.assertFileExists(file);
 		try (var reader = new FileReader(file)) {
@@ -43,19 +43,16 @@ class AwsEnvironmentPostProcessor implements EnvironmentPostProcessor {
 	}
 
 	@Override
-	public void postProcessEnvironment(ConfigurableEnvironment environment,
-			SpringApplication application) {
+	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
 
 		var awsRoot = new File(System.getProperty("user.home"), ".aws");
-		readFileIntoEnvironment(new File(awsRoot, "credentials"), "aws-credentials",
-				environment, (key) -> key);
-		readFileIntoEnvironment(new File(awsRoot, "config"), "aws-config", environment,
-				k -> {
-					if (k.equalsIgnoreCase("region")) {
-						return "aws_region";
-					}
-					return k;
-				});
+		readFileIntoEnvironment(new File(awsRoot, "credentials"), "aws-credentials", environment, (key) -> key);
+		readFileIntoEnvironment(new File(awsRoot, "config"), "aws-config", environment, k -> {
+			if (k.equalsIgnoreCase("region")) {
+				return "aws_region";
+			}
+			return k;
+		});
 	}
 
 }

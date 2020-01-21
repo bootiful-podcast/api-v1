@@ -39,11 +39,10 @@ class PipelineHttpController {
 
 	private final MediaType photoContentType = MediaType.IMAGE_JPEG;
 
-	private final MediaType audioContentType = MediaType
-			.parseMediaType("binary/octet-stream");
+	private final MediaType audioContentType = MediaType.parseMediaType("binary/octet-stream");
 
-	PipelineHttpController(PipelineProperties props, AwsS3Service s3,
-			PodcastRepository repository, PipelineService service) {
+	PipelineHttpController(PipelineProperties props, AwsS3Service s3, PodcastRepository repository,
+			PipelineService service) {
 		this.file = CopyUtils.ensureDirectoryExists(props.getS3().getStagingDirectory());
 		this.service = service;
 		this.s3 = s3;
@@ -57,8 +56,7 @@ class PipelineHttpController {
 			Map<String, String> statusMap;
 			if (null != podcast.getS3AudioUri()) {
 				statusMap = Map.of( //
-						"media-url",
-						service.buildMediaUriForPodcastById(podcast.getId()).toString(), //
+						"media-url", service.buildMediaUriForPodcastById(podcast.getId()).toString(), //
 						"status", this.finishedMessage //
 				);
 			}
@@ -68,12 +66,10 @@ class PipelineHttpController {
 			log.info("returning status: " + statusMap.toString() + " for " + uid);
 			return statusMap;
 		});
-		return response.map(reply -> ResponseEntity.ok().body(reply))
-				.orElse(ResponseEntity.noContent().build());
+		return response.map(reply -> ResponseEntity.ok().body(reply)).orElse(ResponseEntity.noContent().build());
 	}
 
-	private ResponseEntity<InputStreamResource> readResource(MediaType mediaContentType,
-			String uid,
+	private ResponseEntity<InputStreamResource> readResource(MediaType mediaContentType, String uid,
 			Function<Podcast, String> functionToExtractAFileNameKeyGivenAPodcast,
 			Function<String, S3Object> produceS3Object) {
 		return this.podcastRepository //
@@ -99,12 +95,11 @@ class PipelineHttpController {
 					return ResponseEntity.ok()//
 							.header("X-Podcast-UID", uid)//
 							.contentType(mediaContentType)//
-							.header(HttpHeaders.CONTENT_DISPOSITION,
-									"attachment; filename=\"" + record.key + "\"")//
+							.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + record.key + "\"")//
 							.body(inputStreamResource);
 				}) //
-				.orElseThrow(() -> new IllegalArgumentException(
-						"couldn't find the Podcast associated with UID  " + uid));
+				.orElseThrow(
+						() -> new IllegalArgumentException("couldn't find the Podcast associated with UID  " + uid));
 
 	}
 
@@ -123,8 +118,8 @@ class PipelineHttpController {
 	}
 
 	@PostMapping("/podcasts/{uid}")
-	ResponseEntity<?> beginProduction(@PathVariable("uid") String uid,
-			@RequestParam("file") MultipartFile file) throws Exception {
+	ResponseEntity<?> beginProduction(@PathVariable("uid") String uid, @RequestParam("file") MultipartFile file)
+			throws Exception {
 		var newFile = new File(this.file, uid);
 		file.transferTo(newFile);
 		CopyUtils.assertFileExists(newFile);

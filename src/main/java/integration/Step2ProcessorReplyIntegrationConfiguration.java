@@ -38,14 +38,12 @@ class Step2ProcessorReplyIntegrationConfiguration {
 	private final ApplicationEventPublisher publisher;
 
 	@Bean
-	IntegrationFlow processorReplyPipeline(PipelineProperties properties,
-			RabbitMqHelper helper, AmqpTemplate template, PipelineService service,
-			PodcastRepository repository, JsonHelper jsonService,
+	IntegrationFlow processorReplyPipeline(PipelineProperties properties, RabbitMqHelper helper, AmqpTemplate template,
+			PipelineService service, PodcastRepository repository, JsonHelper jsonService,
 			ConnectionFactory connectionFactory, NotificationService emailer) {
 
 		var podbeanConfiguration = properties.getPodbean();
-		helper.defineDestination(podbeanConfiguration.getRequestsExchange(),
-				podbeanConfiguration.getRequestsQueue(),
+		helper.defineDestination(podbeanConfiguration.getRequestsExchange(), podbeanConfiguration.getRequestsQueue(),
 				podbeanConfiguration.getRequestsRoutingKey());
 		var processorOutboundAdapter = Amqp//
 				.outboundAdapter(template)//
@@ -62,13 +60,11 @@ class Step2ProcessorReplyIntegrationConfiguration {
 					var reference = new TypeReference<Map<String, String>>() {
 					};
 					var resultMap = jsonService.fromJson(payload, reference);
-					var outputFile = resultMap.getOrDefault("mp3",
-							resultMap.getOrDefault("wav", null));
+					var outputFile = resultMap.getOrDefault("mp3", resultMap.getOrDefault("wav", null));
 					var uid = resultMap.get("uid");
 					resultMap.put(outputFileKey, outputFile);
 					var outputBucketName = resultMap.get("output-bucket-name");
-					this.recordProcessedFilesToDatabase(uid, outputBucketName,
-							outputFile);
+					this.recordProcessedFilesToDatabase(uid, outputBucketName, outputFile);
 					return resultMap;
 				}) //
 				.handle((GenericHandler<Map<String, String>>) (payload, headers) -> {
@@ -78,19 +74,15 @@ class Step2ProcessorReplyIntegrationConfiguration {
 						var data = Map.<String, Object>of(//
 								"uid", uid, //
 								"title", podcast.getTitle(), //
-								"outputMediaUri",
-								service.buildMediaUriForPodcastById(podcast.getId())
-										.toString());
+								"outputMediaUri", service.buildMediaUriForPodcastById(podcast.getId()).toString());
 						log.info("sending the following data into the template: " + data);
 						var fileUploadedTemplate = "file-uploaded.ftl";
 						var content = emailer.render(fileUploadedTemplate, data);
 						var notificationsProperties = properties.getNotifications();
-						var response = emailer.send(
-								new Email(notificationsProperties.getToEmail()),
-								new Email(notificationsProperties.getFromEmail()),
-								notificationsProperties.getSubject(), content);
-						var xxSuccessful = HttpStatus.valueOf(response.getStatusCode())
-								.is2xxSuccessful();
+						var response = emailer.send(new Email(notificationsProperties.getToEmail()),
+								new Email(notificationsProperties.getFromEmail()), notificationsProperties.getSubject(),
+								content);
+						var xxSuccessful = HttpStatus.valueOf(response.getStatusCode()).is2xxSuccessful();
 						Assert.isTrue(xxSuccessful,
 								"tried to send a notification email with SendGrid, and got back a non-positive status code. "
 										+ response.getBody());
@@ -102,8 +94,7 @@ class Step2ProcessorReplyIntegrationConfiguration {
 				.get();//
 	}
 
-	private void recordProcessedFilesToDatabase(String uid, String outputBucketName,
-			String fn) {
+	private void recordProcessedFilesToDatabase(String uid, String outputBucketName, String fn) {
 		this.publisher.publishEvent(new PodcastProcessedEvent(uid, outputBucketName, fn));
 	}
 

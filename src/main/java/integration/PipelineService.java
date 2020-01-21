@@ -18,15 +18,13 @@ class PipelineService {
 
 	private final ServerUriResolver resolver;
 
-	PipelineService(MessageChannel channel, PodcastRepository repository,
-			ServerUriResolver resolver) {
+	PipelineService(MessageChannel channel, PodcastRepository repository, ServerUriResolver resolver) {
 		this.pipeline = channel;
 		this.repository = repository;
 		this.resolver = resolver;
 	}
 
-	public boolean launchPipeline(String uid,
-			File archiveFromClientContainingPodcastAssets) {
+	public boolean launchPipeline(String uid, File archiveFromClientContainingPodcastAssets) {
 		var msg = MessageBuilder //
 				.withPayload(archiveFromClientContainingPodcastAssets.getAbsolutePath())//
 				.setHeader(Headers.UID, uid)//
@@ -37,8 +35,7 @@ class PipelineService {
 	private URI uriFromPodcast(URI server, Optional<Podcast> podcast) {
 		var path = podcast//
 				.map(p -> "/podcasts/" + p.getUid() + "/produced-audio")//
-				.orElseThrow(() -> new IllegalArgumentException(
-						"you must provide a valid podcast identifier"));//
+				.orElseThrow(() -> new IllegalArgumentException("you must provide a valid podcast identifier"));//
 		return URI.create(server.toString() + path);
 	}
 

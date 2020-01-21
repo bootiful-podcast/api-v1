@@ -19,25 +19,21 @@ class AwsConfiguration {
 	@Bean
 	AwsS3Service awsS3Service(PipelineProperties properties, AmazonS3 s3) {
 		var s3Properties = properties.getS3();
-		return new AwsS3Service(s3Properties.getInputBucketName(),
-				s3Properties.getOutputBucketName(), s3);
+		return new AwsS3Service(s3Properties.getInputBucketName(), s3Properties.getOutputBucketName(), s3);
 	}
 
 	@Bean
-	AmazonS3 amazonS3(@Value("${AWS_ACCESS_KEY_ID}") String accessKey,
-			@Value("${AWS_SECRET_ACCESS_KEY}") String secret,
+	AmazonS3 amazonS3(@Value("${AWS_ACCESS_KEY_ID}") String accessKey, @Value("${AWS_SECRET_ACCESS_KEY}") String secret,
 			@Value("${AWS_REGION}") String region) {
 		var credentials = new BasicAWSCredentials(accessKey, secret);
 		var timeout = 5 * 60 * 1000;
-		var clientConfiguration = new ClientConfiguration()
-				.withClientExecutionTimeout(timeout).withConnectionMaxIdleMillis(timeout)
-				.withConnectionTimeout(timeout).withConnectionTTL(timeout)
+		var clientConfiguration = new ClientConfiguration().withClientExecutionTimeout(timeout)
+				.withConnectionMaxIdleMillis(timeout).withConnectionTimeout(timeout).withConnectionTTL(timeout)
 				.withRequestTimeout(timeout);
 
-		return AmazonS3ClientBuilder.standard()
-				.withClientConfiguration(clientConfiguration)
-				.withCredentials(new AWSStaticCredentialsProvider(credentials))
-				.withRegion(Regions.fromName(region)).build();
+		return AmazonS3ClientBuilder.standard().withClientConfiguration(clientConfiguration)
+				.withCredentials(new AWSStaticCredentialsProvider(credentials)).withRegion(Regions.fromName(region))
+				.build();
 	}
 
 }

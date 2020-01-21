@@ -11,8 +11,7 @@ import java.net.URI;
 public class PodcastPublishedToPodbeanEvent extends ApplicationEvent {
 
 	public PodcastPublishedToPodbeanEvent(String uid, URI mediaUrl, URI permalinkUrl) {
-		super(PodbeanPodcast.builder().uid(uid).mediaUrl(mediaUrl).playerUrl(permalinkUrl)
-				.build());
+		super(PodbeanPodcast.builder().uid(uid).mediaUrl(mediaUrl).playerUrl(permalinkUrl).build());
 	}
 
 	@Override

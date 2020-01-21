@@ -13,8 +13,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Log4j2
-class CloudFoundryServerUriResolver extends AbstractServerUriResolver
-		implements ServerUriResolver {
+class CloudFoundryServerUriResolver extends AbstractServerUriResolver implements ServerUriResolver {
 
 	private final ObjectMapper objectMapper;
 
@@ -30,8 +29,7 @@ class CloudFoundryServerUriResolver extends AbstractServerUriResolver
 	}
 
 	@SneakyThrows
-	CloudFoundryServerUriResolver(ObjectMapper om, String json,
-			Function<List<String>, String> whichUriToSelect) {
+	CloudFoundryServerUriResolver(ObjectMapper om, String json, Function<List<String>, String> whichUriToSelect) {
 		this.objectMapper = om;
 		Map<String, Object> map = this.objectMapper.readValue(json, this.typeReference);
 		Assert.notNull(map, "the result of reading the JSON must be non-null");
@@ -39,8 +37,7 @@ class CloudFoundryServerUriResolver extends AbstractServerUriResolver
 				"the VCAP_SERVICES environment variable does not contain any routes");
 		var urisRootObject = map.get(this.applicationUrisKey);
 		Assert.isTrue(urisRootObject instanceof Collection,
-				"the attribute must exist and it must be a "
-						+ Collection.class.getName());
+				"the attribute must exist and it must be a " + Collection.class.getName());
 		var selection = whichUriToSelect.apply(((List<String>) urisRootObject));
 		this.uri = this.buildUriFor(selection);
 	}

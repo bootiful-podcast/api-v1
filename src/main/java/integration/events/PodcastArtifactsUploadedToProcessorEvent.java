@@ -10,8 +10,7 @@ import java.io.File;
 
 public class PodcastArtifactsUploadedToProcessorEvent extends ApplicationEvent {
 
-	public PodcastArtifactsUploadedToProcessorEvent(String uid, String type, String s3Uri,
-			File stagingDirectory) {
+	public PodcastArtifactsUploadedToProcessorEvent(String uid, String type, String s3Uri, File stagingDirectory) {
 		super(PodcastFiles//
 				.builder() //
 				.uid(uid) //

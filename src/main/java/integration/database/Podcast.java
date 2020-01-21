@@ -60,14 +60,12 @@ public class Podcast {
 
 	@Override
 	public String toString() {
-		return "Podcast{" + "id=" + id + ", uid='" + uid + '\'' + ", title='" + title
-				+ '\'' + ", description='" + description + '\'' + ", notes='" + notes
-				+ '\'' + ", transcript='" + transcript + '\'' + ", mediaS3Uri='"
-				+ s3AudioUri + '\'' + ", s3OutputFileName='" + s3AudioFileName + '\''
-				+ ", s3EpisodePhoto='" + s3PhotoFileName + '\'' + ", podbeanDraftCreated="
-				+ podbeanDraftCreated + ", podbeanDraftPublished=" + podbeanDraftPublished
-				+ ", podbeanMediaUri='" + podbeanMediaUri + '\'' + ", date=" + date
-				+ ", links=" + links + ", media=" + media + '}';
+		return "Podcast{" + "id=" + id + ", uid='" + uid + '\'' + ", title='" + title + '\'' + ", description='"
+				+ description + '\'' + ", notes='" + notes + '\'' + ", transcript='" + transcript + '\''
+				+ ", mediaS3Uri='" + s3AudioUri + '\'' + ", s3OutputFileName='" + s3AudioFileName + '\''
+				+ ", s3EpisodePhoto='" + s3PhotoFileName + '\'' + ", podbeanDraftCreated=" + podbeanDraftCreated
+				+ ", podbeanDraftPublished=" + podbeanDraftPublished + ", podbeanMediaUri='" + podbeanMediaUri + '\''
+				+ ", date=" + date + ", links=" + links + ", media=" + media + '}';
 	}
 
 }

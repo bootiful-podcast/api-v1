@@ -21,8 +21,7 @@ public class AwsS3Service {
 
 	private final AmazonS3 s3;
 
-	public URI createS3Uri(String bucketName, String nestedBucketFolder,
-			String fileName) {
+	public URI createS3Uri(String bucketName, String nestedBucketFolder, String fileName) {
 		var uri = this.s3FqnFor(bucketName, nestedBucketFolder, fileName);
 		log.debug("the S3 FQN URI is " + uri);
 		if (null == uri) {
@@ -42,8 +41,7 @@ public class AwsS3Service {
 
 	public S3Object download(String bucketName, String folder, String key) {
 		try {
-			log.info(String.format(
-					"trying to download from bucket %s with key based on folder %s and key %s",
+			log.info(String.format("trying to download from bucket %s with key based on folder %s and key %s",
 					bucketName, folder, key));
 			var newKey = folder == null ? key : folder + '/' + key;
 			var request = new GetObjectRequest(bucketName, newKey);
@@ -65,18 +63,15 @@ public class AwsS3Service {
 	}
 
 	@SneakyThrows
-	private URI upload(String bucketName, String contentType, String nestedBucketFolder,
-			File file) {
+	private URI upload(String bucketName, String contentType, String nestedBucketFolder, File file) {
 		if (file.length() > 0) {
-			log.info("trying to upload the file " + file.getAbsolutePath() + " to bucket "
-					+ bucketName + " with content type " + contentType
-					+ " and nested folder " + nestedBucketFolder);
+			log.info("trying to upload the file " + file.getAbsolutePath() + " to bucket " + bucketName
+					+ " with content type " + contentType + " and nested folder " + nestedBucketFolder);
 			var objectMetadata = new ObjectMetadata();
 			objectMetadata.setContentType(contentType);
 			objectMetadata.setContentLength(file.length());
-			var request = new PutObjectRequest(bucketName
-					+ (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder),
-					file.getName(), file);
+			var request = new PutObjectRequest(
+					bucketName + (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder), file.getName(), file);
 			var putObjectResult = this.s3.putObject(request);
 			Assert.notNull(putObjectResult, "the S3 file hasn't been uploaded");
 			return this.createS3Uri(bucketName, nestedBucketFolder, file.getName());
@@ -98,8 +93,7 @@ public class AwsS3Service {
 			Assert.notNull(object, "the fetch of the object should not be null");
 		}
 		catch (Exception e) {
-			log.warn("No object of this key name " + key + "exists in this bucket, "
-					+ bucket);
+			log.warn("No object of this key name " + key + "exists in this bucket, " + bucket);
 			return null;
 		}
 		return String.format("s3://%s/%s", bucket, key);

@@ -20,8 +20,7 @@ public abstract class CopyUtils {
 
 	@SneakyThrows
 	public static void copy(InputStream in, File out) {
-		try (var fin = in instanceof BufferedInputStream ? in
-				: new BufferedInputStream(in);
+		try (var fin = in instanceof BufferedInputStream ? in : new BufferedInputStream(in);
 				var fout = new BufferedOutputStream(new FileOutputStream(out))) {
 			copy(fin, fout);
 		}
@@ -30,8 +29,7 @@ public abstract class CopyUtils {
 	@SneakyThrows
 	public static void copy(File in, OutputStream out) {
 		try (var fin = new BufferedInputStream(new FileInputStream(in));
-				var fout = out instanceof BufferedOutputStream ? out
-						: new BufferedOutputStream(out)) {
+				var fout = out instanceof BufferedOutputStream ? out : new BufferedOutputStream(out)) {
 			copy(fin, fout);
 		}
 	}
@@ -53,23 +51,20 @@ public abstract class CopyUtils {
 	@SneakyThrows
 	private static void copyDirectory(File og, File target) {
 		Assert.isTrue(!target.exists() || FileSystemUtils.deleteRecursively(target),
-				"the target directory " + target.getAbsolutePath()
-						+ " exists and could not be deleted");
+				"the target directory " + target.getAbsolutePath() + " exists and could not be deleted");
 		FileSystemUtils.copyRecursively(og, target);
 	}
 
 	@SneakyThrows
 	private static void copyFile(File og, File target) {
 		Assert.isTrue((target.exists() && target.delete()) || !target.exists(),
-				"the target file " + target.getAbsolutePath()
-						+ " exists, but could not be deleted");
+				"the target file " + target.getAbsolutePath() + " exists, but could not be deleted");
 		FileCopyUtils.copy(og, target);
 	}
 
 	@SneakyThrows
 	public static File copy(File og, File target) {
-		log.info("copying from " + og.getAbsolutePath() + " to "
-				+ target.getAbsolutePath());
+		log.info("copying from " + og.getAbsolutePath() + " to " + target.getAbsolutePath());
 		if (og.isFile()) {
 			copyFile(og, target);
 		}
@@ -98,8 +93,7 @@ public abstract class CopyUtils {
 
 	public static File ensureDirectoryExists(File f) {
 		Assert.notNull(f, "you must provide a non-null argument");
-		Assert.isTrue(f.exists() || f.mkdirs(),
-				"the file " + f.getAbsolutePath() + " does not exist");
+		Assert.isTrue(f.exists() || f.mkdirs(), "the file " + f.getAbsolutePath() + " does not exist");
 		return f;
 	}
 
