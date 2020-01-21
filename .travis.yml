@@ -16,6 +16,9 @@ before_script:
 install:
   - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V -U
 
+services:
+  - postgresql
+
 script:
   - mvn -e install
   - ./deploy/cf.sh
