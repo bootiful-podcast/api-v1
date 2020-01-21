@@ -10,26 +10,32 @@ import integration.PipelineProperties;
 import integration.utils.CopyUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
 import java.util.Arrays;
 
-public class AwsTest {
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class AwsS3ServiceTest {
 
 	private final Resource resource = new ClassPathResource("/sample-image.jpg");
+
+	@Autowired
+	private AwsS3Service amazonS3Service;
 
 	@Test
 	public void uploadAndDownload() throws Exception {
 		var sampleImageBeforeUpload = File.createTempFile("sample-image-before-upload", ".jpg");
 		var sampleImageAfterUpload = File.createTempFile("sample-image-after-upload", ".jpg");
 		try {
-			var amazonS3 = amazonS3(System.getenv("AWS_ACCESS_KEY_ID"), System.getenv("AWS_SECRET_ACCESS_KEY"),
-					System.getenv("AWS_REGION"));
-			var amazonS3Service = new AwsS3Service("podcast-input-bucket", "podcast-output-bucket", amazonS3);
 
 			CopyUtils.copy(this.resource.getInputStream(), sampleImageBeforeUpload);
 			amazonS3Service.uploadInputFile(MediaType.IMAGE_JPEG_VALUE, "test", sampleImageBeforeUpload);
