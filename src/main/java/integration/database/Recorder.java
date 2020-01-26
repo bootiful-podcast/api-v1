@@ -108,6 +108,7 @@ class Recorder {
 		var uid = event.getSource().getUid();
 		repository.findByUid(uid).ifPresentOrElse(podcast -> {
 			podcast.setPodbeanDraftCreated(new Date());
+			podcast.setPodbeanPhotoUri(event.getSource().getLogoUrl().toString());
 			podcast.setPodbeanMediaUri(event.getSource().getMediaUrl().toString());
 			repository.save(podcast);
 		}, missingPodcastRunnable(uid));

@@ -46,6 +46,9 @@ public class Podcast {
 	@Column(name = "podbean_media_uri")
 	private String podbeanMediaUri;
 
+	@Column(name = "podbean_photo_uri")
+	private String podbeanPhotoUri;
+
 	private Date date = new Date();
 
 	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })

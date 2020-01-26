@@ -27,6 +27,7 @@ import org.springframework.util.FileCopyUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.function.Function;
 
 /**
  * This is step 3 in the flow.
@@ -57,18 +58,26 @@ class Step3PodbeanIntegrationConfiguration {
 				.from(amqpInboundAdapter)//
 				.transform(incoming -> repository.findByUid((String) incoming).get())
 				.handle((GenericHandler<Podcast>) (podcast, messageHeaders) -> {
-					var fileForDownloadedMp3 = new File(podbeanDirectory, podcast.getUid() + ".mp3");
-					this.downloadPodcastMp3ToLocalFileSystem(s3Service, podcast, fileForDownloadedMp3);
-					var upload = podbeanClient.upload(MediaType.parseMediaType("audio/mpeg"), fileForDownloadedMp3,
-							fileForDownloadedMp3.length());
-					var episode = podbeanClient.publishEpisode(podcast.getTitle(), podcast.getDescription(),
-							EpisodeStatus.DRAFT, EpisodeType.PUBLIC, upload.getFileKey(), null);
-					publisher.publishEvent(new PodcastPublishedToPodbeanEvent(podcast.getUid(), episode.getMediaUrl(),
-							episode.getPlayerUrl()));
-					log.info("the episode has been published to " + episode.toString() + '.');
-					Assert.isTrue(fileForDownloadedMp3.exists() && fileForDownloadedMp3.delete(), "the" + " file "
-							+ fileForDownloadedMp3.getAbsolutePath() + " does not exist or could not be deleted");
 
+					var mp3FileName = fileNameFor(podcast, "mp3");
+					var mp3File = new File(podbeanDirectory, mp3FileName);
+					this.downloadFromS3(s3Service, podcast, mp3File, p -> mp3FileName);
+					var mp3Upload = podbeanClient.upload(MediaType.parseMediaType("audio/mpeg"), mp3File,
+							mp3File.length());
+
+					var jpgFileName = fileNameFor(podcast, "jpg");
+					var jpgFile = new File(podbeanDirectory, jpgFileName);
+					this.downloadFromS3(s3Service, podcast, jpgFile, p -> jpgFileName);
+					var jpgUpload = podbeanClient.upload(MediaType.IMAGE_JPEG, jpgFile, jpgFile.length());
+
+					var episode = podbeanClient.publishEpisode(podcast.getTitle(), podcast.getDescription(),
+							EpisodeStatus.DRAFT, EpisodeType.PUBLIC, mp3Upload.getFileKey(), jpgUpload.getFileKey());
+
+					publisher.publishEvent(new PodcastPublishedToPodbeanEvent(podcast.getUid(), episode.getMediaUrl(),
+							episode.getPlayerUrl(), episode.getLogoUrl()));
+					log.info("the episode has been published to " + episode.toString() + '.');
+					Assert.isTrue(mp3File.exists() && mp3File.delete(),
+							"the" + " file " + mp3File.getAbsolutePath() + " does not exist or could not be deleted");
 					return true;
 				})//
 				.handle(siteGeneratorRequests)//
@@ -76,14 +85,16 @@ class Step3PodbeanIntegrationConfiguration {
 	}
 
 	@SneakyThrows
-	private void downloadPodcastMp3ToLocalFileSystem(AwsS3Service s3Service, Podcast podcast, File file) {
-		log.info("trying to download the S3 file for podcast " + podcast.getUid()
-				+ " and publish it to the Podbean API.");
-		var s3Key = podcast.getS3AudioFileName();
-		var s3Object = s3Service.downloadOutputFile(podcast.getUid(), s3Key);
+	private void downloadFromS3(AwsS3Service s3Service, Podcast podcast, File file,
+			Function<Podcast, String> keyProducer) {
+		var s3Object = s3Service.downloadOutputFile(podcast.getUid(), keyProducer.apply(podcast));
 		FileCopyUtils.copy(s3Object.getObjectContent(), new FileOutputStream(file));
 		Assert.isTrue(file.exists() && file.length() > 0,
 				"the file could not be downloaded to " + file.getAbsolutePath() + ".");
+	}
+
+	private static String fileNameFor(Podcast podcast, String ext) {
+		return podcast.getUid() + "." + (ext.toLowerCase());
 	}
 
 	@Bean

@@ -1,5 +1,6 @@
 package integration;
 
+import integration.aws.AwsS3Service;
 import integration.database.PodcastRepository;
 import integration.self.ServerUriResolver;
 import org.springframework.boot.SpringApplication;
@@ -23,9 +24,9 @@ public class ApiApplication {
 	}
 
 	@Bean
-	PipelineService pipelineService(PodcastRepository repository, ServerUriResolver resolver,
+	PipelineService pipelineService(PodcastRepository repository, AwsS3Service s3, ServerUriResolver resolver,
 			Step1UploadPreparationIntegrationConfiguration configuration) {
-		return new PipelineService(configuration.uploadsMessageChannel(), repository, resolver);
+		return new PipelineService(configuration.uploadsMessageChannel(), s3, repository, resolver);
 	}
 
 }

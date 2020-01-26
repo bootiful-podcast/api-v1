@@ -15,14 +15,15 @@ import java.util.function.Function;
 @Log4j2
 class CloudFoundryServerUriResolver extends AbstractServerUriResolver implements ServerUriResolver {
 
-	private final ObjectMapper objectMapper;
+	private final URI uri;
 
-	private final TypeReference<Map<String, Object>> typeReference = new TypeReference<Map<String, Object>>() {
-	};
+	private final ObjectMapper objectMapper;
 
 	private final String applicationUrisKey = "application_uris";
 
-	private final URI uri;
+	private final TypeReference<Map<String, Object>> typeReference = //
+			new TypeReference<>() {
+			};
 
 	CloudFoundryServerUriResolver(ObjectMapper om, String json) {
 		this(om, json, strings -> strings.get(0));
@@ -38,7 +39,7 @@ class CloudFoundryServerUriResolver extends AbstractServerUriResolver implements
 		var urisRootObject = map.get(this.applicationUrisKey);
 		Assert.isTrue(urisRootObject instanceof Collection,
 				"the attribute must exist and it must be a " + Collection.class.getName());
-		var selection = whichUriToSelect.apply(((List<String>) urisRootObject));
+		var selection = whichUriToSelect.apply((List<String>) urisRootObject);
 		this.uri = this.buildUriFor(selection);
 	}
 

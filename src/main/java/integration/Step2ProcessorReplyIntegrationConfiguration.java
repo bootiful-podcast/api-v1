@@ -23,7 +23,6 @@ import org.springframework.integration.handler.GenericHandler;
 import org.springframework.util.Assert;
 
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * This is step 2 in the flow.
@@ -69,8 +68,7 @@ class Step2ProcessorReplyIntegrationConfiguration {
 				}) //
 				.handle((GenericHandler<Map<String, String>>) (payload, headers) -> {
 					var uid = payload.get("uid");
-					Optional<Podcast> byUid = repository.findByUid(uid);
-					byUid.ifPresent(podcast -> {
+					return repository.findByUid(uid).map(podcast -> {
 						var data = Map.<String, Object>of(//
 								"uid", uid, //
 								"title", podcast.getTitle(), //
@@ -86,8 +84,8 @@ class Step2ProcessorReplyIntegrationConfiguration {
 						Assert.isTrue(xxSuccessful,
 								"tried to send a notification email with SendGrid, and got back a non-positive status code. "
 										+ response.getBody());
-					});
-					return byUid.orElse(null);
+						return podcast;
+					}).orElse(null);
 				})//
 				.transform(Podcast::getUid)//
 				.handle(processorOutboundAdapter)//
