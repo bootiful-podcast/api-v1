@@ -9,6 +9,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedInputStream;
@@ -63,13 +64,18 @@ public class PodcastPackageManifest {
 		var description = podcastElement.getElementsByTagName("description").item(0);
 		Arrays.asList(interview, intro, photo, description)
 				.forEach(e -> Assert.notNull(e, "the element must not be null"));
-		var introSrc = readAttributeFrom(Objects.requireNonNull(intro).getAttributes(), "src");
-		var interviewSrc = readAttributeFrom(Objects.requireNonNull(interview).getAttributes(), "src");
-		var photoSrc = readAttributeFrom(Objects.requireNonNull(photo).getAttributes(), "src");
+		var introSrc = readAttributeFrom(intro, "src");
+		var interviewSrc = readAttributeFrom(interview, "src");
+		var photoSrc = readAttributeFrom(photo, "src");
 		var descriptionTxt = description.getTextContent().trim();
-		var uid = readAttributeFrom(podcastElement.getAttributes(), "uid");
-		var title = readAttributeFrom(podcastElement.getAttributes(), "title");
+		var uid = readAttributeFrom(podcastElement, "uid");
+		var title = readAttributeFrom(podcastElement, "title");
 		return from(uid, title, descriptionTxt, introSrc, interviewSrc, photoSrc);
+	}
+
+	/* Avoids the tedious Objects.requireNonNull everywhere. */
+	private static String readAttributeFrom(Node node, String attr) {
+		return readAttributeFrom(Objects.requireNonNull(node).getAttributes(), attr);
 	}
 
 	private static String readAttributeFrom(NamedNodeMap map, String attr) {
