@@ -46,8 +46,7 @@ class SoundcloudDownloaderJob {
 
 	SoundcloudDownloaderJob(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
-		Assert.isTrue(this.root.exists() || this.root.mkdirs(),
-				"the root directory, '" + this.root.getAbsolutePath() + "', does not exist and could not be created.");
+		ensureDirectoryExists(this.root);
 		log.info("files will be downloaded to " + this.root.getAbsolutePath() + '.');
 	}
 
