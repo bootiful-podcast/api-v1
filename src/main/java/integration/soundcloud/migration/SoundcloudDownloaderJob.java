@@ -26,8 +26,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Objects;
+
+import static integration.utils.CopyUtils.ensureDirectoryExists;
 
 @Log4j2
 @Component
@@ -40,7 +41,7 @@ class SoundcloudDownloaderJob {
 
 	private final RestTemplate restTemplate = new RestTemplateBuilder().build();
 
-	private final File root = new File(new File(System.getProperty("user.home"), "Desktop"), "soundcloud");
+	private final File root = MigrationUtils.getRoot();
 
 	private final ObjectMapper objectMapper;
 
@@ -128,11 +129,6 @@ class SoundcloudDownloaderJob {
 		return file;
 	}
 
-	private void ensureDirectoryExists(File file) {
-		Assert.isTrue(file.exists() || file.mkdirs(),
-				"the directory '" + file.getAbsolutePath() + "' does not exist and could not be created.");
-	}
-
 	@SneakyThrows
 	private void writeJsonFor(SoundcloudPodcast podcast) {
 		var json = this.objectMapper.writer().writeValueAsString(podcast);
@@ -182,21 +178,5 @@ class SoundcloudDownloaderJob {
 		return new SoundcloudPodcast(guid, title, pubDate, linkToSoundcloudEpisode, description, mp3EnclosureUri,
 				itunesImageNodeUri);
 	}
-
-}
-
-@Data
-@RequiredArgsConstructor
-class SoundcloudPodcast {
-
-	private final String guid, title;
-
-	private final Date pubDate;
-
-	private final URI linkToSoundcloudEpisode;
-
-	private final String description;
-
-	private final URI mp3Uri, imageUri;
 
 }

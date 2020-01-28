@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 class MigrationJob {
 
 	@EventListener(ApplicationReadyEvent.class)
-	public void go() throws Exception {
+	public void run() throws Exception {
 	}
 
 }
