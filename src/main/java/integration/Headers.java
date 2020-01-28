@@ -14,7 +14,7 @@ public class Headers {
 
 	public static final String CONTENT_TYPE = "contentType";
 
-	// tddo remove this im pretty sure it's not being used anywhere
+	// todo remove this i'm pretty sure it's not being used anywhere
 	public static final String ASSET_TYPE = "assetType";
 
 	public static final String S3_PATH = "s3Path";

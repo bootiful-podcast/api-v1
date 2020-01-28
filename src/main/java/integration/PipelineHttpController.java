@@ -25,6 +25,8 @@ class PipelineHttpController {
 
 	private final PipelineService service;
 
+	private final String accessControlAllowOriginHeaderValue = "https://bootifulpodcast.fm";
+
 	private final AwsS3Service s3;
 
 	private final PodcastRepository podcastRepository;
@@ -72,6 +74,7 @@ class PipelineHttpController {
 				.header("X-Podcast-UID", uid)//
 				.contentType(this.photoContentType)//
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + uid + ".jpg" + "\"")//
+				.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, this.accessControlAllowOriginHeaderValue)
 				.body(service.getPodcastPhotoMedia(uid));
 	}
 
@@ -81,6 +84,7 @@ class PipelineHttpController {
 		return ResponseEntity.ok()//
 				.header("X-Podcast-UID", uid)//
 				.contentType(this.audioContentType)//
+				.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, this.accessControlAllowOriginHeaderValue)
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + uid + ".mp3" + "\"")//
 				.body(service.getPodcastAudioMedia(uid));
 	}
@@ -92,7 +96,7 @@ class PipelineHttpController {
 		file.transferTo(newFile);
 		CopyUtils.assertFileExists(newFile);
 		log.info("the newly POST'd file lives at " + newFile.getAbsolutePath() + '.');
-		Assert.isTrue(this.service.launchPipeline(uid, newFile), "the pipeline says no.");
+		Assert.isTrue(this.service.launchProcessorPipeline(uid, newFile), "the pipeline says no.");
 		var location = URI.create("/podcasts/" + uid + "/status");
 		log.info("sending status location as : '" + location + "'");
 		return ResponseEntity.accepted().location(location).build();

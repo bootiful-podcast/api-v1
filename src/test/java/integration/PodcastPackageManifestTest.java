@@ -11,7 +11,8 @@ public class PodcastPackageManifestTest {
 	@Test
 	public void factory() throws Exception {
 
-		PodcastPackageManifest sample = PodcastPackageManifest.from(this.classPathResource.getInputStream());
+		UnproducedPodcastPackageManifest sample = UnproducedPodcastPackageManifest
+				.from(this.classPathResource.getInputStream());
 		Assert.assertEquals(sample.getTitle(), "A Title");
 		Assert.assertEquals(sample.getUid(), "eeb3a612-928e-40a2-b238-a59c05ee4b4a");
 		Assert.assertEquals(sample.getInterview().getSrc(), "interview.mp3");

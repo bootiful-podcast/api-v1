@@ -25,8 +25,9 @@ public class ApiApplication {
 
 	@Bean
 	PipelineService pipelineService(PodcastRepository repository, AwsS3Service s3, ServerUriResolver resolver,
-			Step1UploadPreparationIntegrationConfiguration configuration) {
-		return new PipelineService(configuration.uploadsMessageChannel(), s3, repository, resolver);
+			Step1UnproducedPipelineIntegrationConfiguration left, Step1PreproducedIntegrationConfiguration right) {
+		return new PipelineService(left.unproducedPipelineMessageChannel(), right.preproducedPipelineMessageChannel(),
+				s3, repository, resolver);
 	}
 
 }

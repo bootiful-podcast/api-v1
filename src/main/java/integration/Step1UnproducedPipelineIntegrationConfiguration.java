@@ -44,7 +44,7 @@ import static integration.Headers.*;
  */
 @Log4j2
 @Configuration
-class Step1UploadPreparationIntegrationConfiguration {
+class Step1UnproducedPipelineIntegrationConfiguration {
 
 	private final GenericHandler<File> s3UploadHandler;
 
@@ -60,7 +60,7 @@ class Step1UploadPreparationIntegrationConfiguration {
 
 	private final ApplicationEventPublisher publisher;
 
-	Step1UploadPreparationIntegrationConfiguration(AwsS3Service s3, JsonHelper jsonService,
+	Step1UnproducedPipelineIntegrationConfiguration(AwsS3Service s3, JsonHelper jsonService,
 			PipelineProperties properties, ApplicationEventPublisher publisher) {
 		this.properties = properties;
 		this.publisher = publisher;
@@ -77,7 +77,7 @@ class Step1UploadPreparationIntegrationConfiguration {
 					"at least one file must be a manifest.xml file for a package to be considered valid.");
 			var manifestFile = manifest.get(0);
 			Assert.notNull(manifest, "the manifest must not be null");
-			var uploadPackageManifest = PodcastPackageManifest.from(manifestFile);
+			var uploadPackageManifest = UnproducedPodcastPackageManifest.from(manifestFile);
 			this.publisher.publishEvent(new PodcastArchiveUploadedEvent(uploadPackageManifest));
 			var stream = files.stream().map(f -> {
 
@@ -92,10 +92,10 @@ class Step1UploadPreparationIntegrationConfiguration {
 					assetType = AssetTypes.TYPE_PHOTO;
 				}
 				if (isInterview) {
-					assetType = AssetTypes.TYPE_INTERVIEW;
+					assetType = AssetTypes.TYPE_INTERVIEW_AUDIO;
 				}
 				if (isIntro) {
-					assetType = AssetTypes.TYPE_INTRODUCTION;
+					assetType = AssetTypes.TYPE_INTRODUCTION_AUDIO;
 				}
 
 				var builder = MessageBuilder//
@@ -111,6 +111,7 @@ class Step1UploadPreparationIntegrationConfiguration {
 				}
 				return builder.build();
 			});
+
 			return stream.collect(Collectors.toList());
 		};
 
@@ -237,7 +238,7 @@ class Step1UploadPreparationIntegrationConfiguration {
 				processorConfig.getRepliesRoutingKey());
 
 		return IntegrationFlows//
-				.from(this.uploadsMessageChannel()) //
+				.from(this.unproducedPipelineMessageChannel()) //
 				.transform(String.class, File::new)//
 				.split(File.class, this.unzipSplitter) //
 				.handle(File.class, this.s3UploadHandler) //
@@ -249,7 +250,7 @@ class Step1UploadPreparationIntegrationConfiguration {
 	}
 
 	@Bean
-	MessageChannel uploadsMessageChannel() {
+	MessageChannel unproducedPipelineMessageChannel() {
 		return MessageChannels.direct().get();
 	}
 

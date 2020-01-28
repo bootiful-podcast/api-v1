@@ -1,6 +1,8 @@
 package integration.database;
 
 import integration.AssetTypes;
+import integration.PreproducedPodcastPackageManifest;
+import integration.UnproducedPodcastPackageManifest;
 import integration.aws.AwsS3Service;
 import integration.events.PodcastArchiveUploadedEvent;
 import integration.events.PodcastArtifactsUploadedToProcessorEvent;
@@ -52,13 +54,24 @@ class Recorder {
 		var podcast = Podcast.builder().date(new Date()).description(manifest.getDescription())
 				.title(manifest.getTitle()).uid(manifest.getUid()).build();
 		repository.save(podcast);
-		var interviewMedia = mediaFor(manifest.getInterview().getSrc(), AssetTypes.TYPE_INTERVIEW);
-		var introMedia = mediaFor(manifest.getIntroduction().getSrc(), AssetTypes.TYPE_INTRODUCTION);
 		var photoMedia = mediaFor(manifest.getPhoto().getSrc(), AssetTypes.TYPE_PHOTO);
 		if (podcast.getMedia() == null) {
 			podcast.setMedia(new ArrayList<>());
 		}
-		Arrays.asList(interviewMedia, introMedia, photoMedia).forEach(m -> podcast.getMedia().add(m));
+		if (uploadedEvent.getSource() instanceof UnproducedPodcastPackageManifest) {
+			var downcastManifest = (UnproducedPodcastPackageManifest) uploadedEvent.getSource();
+			var interviewMedia = mediaFor(downcastManifest.getInterview().getSrc(), AssetTypes.TYPE_INTERVIEW_AUDIO);
+			var introMedia = mediaFor(downcastManifest.getIntroduction().getSrc(), AssetTypes.TYPE_INTRODUCTION_AUDIO);
+			Arrays.asList(interviewMedia, introMedia).forEach(m -> podcast.getMedia().add(m));
+		}
+
+		if (uploadedEvent.getSource() instanceof PreproducedPodcastPackageManifest) {
+			var downcastManifest = (PreproducedPodcastPackageManifest) uploadedEvent.getSource();
+			var producedAudio = mediaFor(downcastManifest.getProducedAudio().getSrc(), AssetTypes.TYPE_PRODUCED_AUDIO);
+			podcast.getMedia().add(producedAudio);
+		}
+
+		Arrays.asList(photoMedia).forEach(m -> podcast.getMedia().add(m));
 		repository.save(podcast);
 	}
 
