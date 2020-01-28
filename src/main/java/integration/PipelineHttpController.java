@@ -37,7 +37,9 @@ class PipelineHttpController {
 
 	private final MediaType photoContentType = MediaType.IMAGE_JPEG;
 
-	private final MediaType audioContentType = MediaType.parseMediaType("binary/octet-stream");
+	private final MediaType audioContentType = MediaType.parseMediaType("audio/mpeg");
+
+	// parseMediaType("binary/octet-stream");
 
 	PipelineHttpController(PipelineProperties props, AwsS3Service s3, PodcastRepository repository,
 			PipelineService service) {
