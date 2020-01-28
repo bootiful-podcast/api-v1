@@ -64,32 +64,13 @@ public class PodcastPackageManifest {
 		var description = podcastElement.getElementsByTagName("description").item(0);
 		Arrays.asList(interview, intro, photo, description)
 				.forEach(e -> Assert.notNull(e, "the element must not be null"));
-		var introSrc = readAttributeFrom(intro, "src");
-		var interviewSrc = readAttributeFrom(interview, "src");
-		var photoSrc = readAttributeFrom(photo, "src");
+		var introSrc = XmlUtils.getAttribute(intro, "src");
+		var interviewSrc = XmlUtils.getAttribute(interview, "src");
+		var photoSrc = XmlUtils.getAttribute(photo, "src");
 		var descriptionTxt = description.getTextContent().trim();
-		var uid = readAttributeFrom(podcastElement, "uid");
-		var title = readAttributeFrom(podcastElement, "title");
+		var uid = XmlUtils.getAttribute(podcastElement, "uid");
+		var title = XmlUtils.getAttribute(podcastElement, "title");
 		return from(uid, title, descriptionTxt, introSrc, interviewSrc, photoSrc);
-	}
-
-	/* Avoids the tedious Objects.requireNonNull everywhere. */
-	private static String readAttributeFrom(Node node, String attr) {
-		return readAttributeFrom(Objects.requireNonNull(node).getAttributes(), attr);
-	}
-
-	private static String readAttributeFrom(NamedNodeMap map, String attr) {
-		if (map == null || map.getLength() == 0) {
-			return null;
-		}
-		var namedItem = map.getNamedItem(attr);
-		if (namedItem != null) {
-			var textContent = namedItem.getTextContent();
-			if (StringUtils.hasText(textContent)) {
-				return textContent;
-			}
-		}
-		return null;
 	}
 
 	@Data
