@@ -5,6 +5,7 @@ import integration.aws.AwsS3Service;
 import integration.database.Podcast;
 import integration.database.PodcastRepository;
 import integration.self.ServerUriResolver;
+import lombok.Data;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.messaging.MessageChannel;
@@ -35,37 +36,32 @@ public class PipelineService {
 		this.resolver = resolver;
 	}
 
-	public Resource getPodcastPhotoMedia(String uid) {
-		return read(uid, podcast -> podcast.getUid() + ".jpg", fn -> this.s3.downloadOutputFile(uid, fn));
+	public S3Resource getPodcastPhotoMedia(String uid) {
+		return buildResourceFor(uid, podcast -> podcast.getUid() + ".jpg", fn -> this.s3.downloadOutputFile(uid, fn));
 	}
 
-	public Resource getPodcastAudioMedia(String uid) {
-		return read(uid, podcast -> podcast.getUid() + ".mp3", fn -> this.s3.downloadOutputFile(uid, fn));
+	public S3Resource getPodcastAudioMedia(String uid) {
+		return buildResourceFor(uid, podcast -> podcast.getUid() + ".mp3", fn -> this.s3.downloadOutputFile(uid, fn));
 	}
 
-	private Resource read(String uid, Function<Podcast, String> functionToExtractAFileNameKeyGivenAPodcast,
+	@Data
+	public static class S3Resource {
+
+		private final Resource resource;
+
+		private final long length;
+
+	}
+
+	private S3Resource buildResourceFor(String uid,
+			Function<Podcast, String> functionToExtractAFileNameKeyGivenAPodcast,
 			Function<String, S3Object> produceS3Object) {
 		return this.repository//
 				.findByUid(uid)//
 				.map(functionToExtractAFileNameKeyGivenAPodcast) //
-				.map(s3Key -> {
-					try {
-						return new Object() {
-							S3Object object = produceS3Object.apply(s3Key);
-
-							String key = s3Key;
-
-						};
-					}
-					catch (Exception e) {
-						ReflectionUtils.rethrowRuntimeException(e);
-					}
-					return null;
-				})//
-				.map(record -> {
-					var inputStream = record.object.getObjectContent();
-					return new InputStreamResource(inputStream);
-				}) //
+				.map(produceS3Object)//
+				.map(record -> new S3Resource(new InputStreamResource(record.getObjectContent()),
+						record.getObjectMetadata().getContentLength()))//
 				.orElseThrow(
 						() -> new IllegalArgumentException("couldn't find the Podcast associated with UID  " + uid));
 

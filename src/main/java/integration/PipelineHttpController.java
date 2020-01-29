@@ -72,23 +72,29 @@ class PipelineHttpController {
 	@SneakyThrows
 	@GetMapping("/podcasts/{uid}/profile-photo")
 	ResponseEntity<Resource> getProfilePhotoMedia(@PathVariable String uid) {
+		PipelineService.S3Resource podcastPhotoMedia = service.getPodcastPhotoMedia(uid);
 		return ResponseEntity.ok()//
 				.header("X-Podcast-UID", uid)//
-				.contentType(this.photoContentType)//
-				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + uid + ".jpg" + "\"")//
+				.header(HttpHeaders.ACCEPT_RANGES, "none").contentType(this.photoContentType)//
+				.contentLength(podcastPhotoMedia.getLength())
+				// .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" +
+				// uid + ".jpg" + "\"")//
 				.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, this.accessControlAllowOriginHeaderValue)
-				.body(service.getPodcastPhotoMedia(uid));
+				.body(podcastPhotoMedia.getResource());
 	}
 
 	@SneakyThrows
-	@GetMapping("/podcasts/{uid}/produced-audio")
+	@GetMapping({ "/podcasts/{uid}/produced-audio", "/podcasts/{uid}/produced-audio.mp3" })
 	ResponseEntity<Resource> getProducedAudioMedia(@PathVariable String uid) {
+		PipelineService.S3Resource podcastAudioMedia = service.getPodcastAudioMedia(uid);
 		return ResponseEntity.ok()//
 				.header("X-Podcast-UID", uid)//
 				.contentType(this.audioContentType)//
+				.contentLength(podcastAudioMedia.getLength()).header(HttpHeaders.ACCEPT_RANGES, "none")
 				.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, this.accessControlAllowOriginHeaderValue)
-				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + uid + ".mp3" + "\"")//
-				.body(service.getPodcastAudioMedia(uid));
+				// .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" +
+				// uid + ".mp3" + "\"")//
+				.body(podcastAudioMedia.getResource());
 	}
 
 	@PostMapping("/podcasts/{uid}")
