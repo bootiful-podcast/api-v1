@@ -76,11 +76,11 @@ class PipelineHttpController {
 		return ResponseEntity.ok()//
 				.header("X-Podcast-UID", uid)//
 				.header(HttpHeaders.ACCEPT_RANGES, "none").contentType(this.photoContentType)//
-				.contentLength(podcastPhotoMedia.getLength())
+				.contentLength(podcastPhotoMedia.contentLength())
 				// .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" +
 				// uid + ".jpg" + "\"")//
 				.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, this.accessControlAllowOriginHeaderValue)
-				.body(podcastPhotoMedia.getResource());
+				.body(podcastPhotoMedia);
 	}
 
 	@SneakyThrows
@@ -90,11 +90,10 @@ class PipelineHttpController {
 		return ResponseEntity.ok()//
 				.header("X-Podcast-UID", uid)//
 				.contentType(this.audioContentType)//
-				.contentLength(podcastAudioMedia.getLength()).header(HttpHeaders.ACCEPT_RANGES, "none")
+				.contentLength(podcastAudioMedia.contentLength())//
+				.header(HttpHeaders.ACCEPT_RANGES, "none")//
 				.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, this.accessControlAllowOriginHeaderValue)
-				// .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" +
-				// uid + ".mp3" + "\"")//
-				.body(podcastAudioMedia.getResource());
+				.body(podcastAudioMedia);
 	}
 
 	@PostMapping("/podcasts/{uid}")

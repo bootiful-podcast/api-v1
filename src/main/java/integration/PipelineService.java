@@ -6,6 +6,7 @@ import integration.database.Podcast;
 import integration.database.PodcastRepository;
 import integration.self.ServerUriResolver;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.messaging.MessageChannel;
@@ -13,7 +14,10 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.ReflectionUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -44,12 +48,62 @@ public class PipelineService {
 		return buildResourceFor(uid, podcast -> podcast.getUid() + ".mp3", fn -> this.s3.downloadOutputFile(uid, fn));
 	}
 
-	@Data
-	public static class S3Resource {
+	@RequiredArgsConstructor
+	public static class S3Resource implements Resource {
 
 		private final Resource resource;
 
 		private final long length;
+
+		@Override
+		public boolean exists() {
+			return resource.exists();
+		}
+
+		@Override
+		public URL getURL() throws IOException {
+			return resource.getURL();
+		}
+
+		@Override
+		public URI getURI() throws IOException {
+			return resource.getURI();
+		}
+
+		@Override
+		public File getFile() throws IOException {
+			return resource.getFile();
+		}
+
+		@Override
+		public long contentLength() throws IOException {
+			return length;
+		}
+
+		@Override
+		public long lastModified() throws IOException {
+			return resource.lastModified();
+		}
+
+		@Override
+		public Resource createRelative(String relativePath) throws IOException {
+			return resource.createRelative(relativePath);
+		}
+
+		@Override
+		public String getFilename() {
+			return resource.getFilename();
+		}
+
+		@Override
+		public String getDescription() {
+			return resource.getDescription();
+		}
+
+		@Override
+		public InputStream getInputStream() throws IOException {
+			return resource.getInputStream();
+		}
 
 	}
 
