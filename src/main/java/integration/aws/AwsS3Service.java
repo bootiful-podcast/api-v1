@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
@@ -48,8 +49,9 @@ public class AwsS3Service {
 			return this.s3.getObject(request);
 		}
 		catch (AmazonS3Exception e) {
-			return download(bucketName, null, key);
+			ReflectionUtils.rethrowRuntimeException(e);
 		}
+		return null;
 	}
 
 	@SneakyThrows

@@ -72,12 +72,12 @@ class Step3PodbeanIntegrationConfiguration {
 				.handle((GenericHandler<Podcast>) (podcast, messageHeaders) -> {
 					var mp3FileName = fileNameFor(podcast, "mp3");
 					var mp3File = new File(podbeanDirectory, mp3FileName);
-					this.downloadFromS3(s3Service, podcast, mp3File, p -> mp3FileName);
+					this.downloadFromS3(s3Service, podcast, mp3File, mp3FileName);
 					var mp3Upload = podbeanClient.upload(MediaType.parseMediaType("audio/mpeg"), mp3File,
 							mp3File.length());
 					var jpgFileName = fileNameFor(podcast, "jpg");
 					var jpgFile = new File(podbeanDirectory, jpgFileName);
-					this.downloadFromS3(s3Service, podcast, jpgFile, p -> jpgFileName);
+					this.downloadFromS3(s3Service, podcast, jpgFile, jpgFileName);
 					var jpgUpload = podbeanClient.upload(MediaType.IMAGE_JPEG, jpgFile, jpgFile.length());
 					var episode = podbeanClient.publishEpisode(podcast.getTitle(), podcast.getDescription(),
 							EpisodeStatus.DRAFT, EpisodeType.PUBLIC, mp3Upload.getFileKey(), jpgUpload.getFileKey());
@@ -93,9 +93,8 @@ class Step3PodbeanIntegrationConfiguration {
 	}
 
 	@SneakyThrows
-	private void downloadFromS3(AwsS3Service s3Service, Podcast podcast, File file,
-			Function<Podcast, String> keyProducer) {
-		var s3Object = s3Service.downloadOutputFile(podcast.getUid(), keyProducer.apply(podcast));
+	private void downloadFromS3(AwsS3Service s3Service, Podcast podcast, File file, String fn) {
+		var s3Object = s3Service.downloadOutputFile(podcast.getUid(), fn);
 		FileCopyUtils.copy(s3Object.getObjectContent(), new FileOutputStream(file));
 		Assert.isTrue(file.exists() && file.length() > 0,
 				"the file could not be downloaded to " + file.getAbsolutePath() + ".");
