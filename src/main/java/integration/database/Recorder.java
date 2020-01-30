@@ -16,10 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Objects;
+import java.util.*;
 
 @Log4j2
 @Component
@@ -71,7 +68,8 @@ class Recorder {
 			podcast.getMedia().add(producedAudio);
 		}
 
-		Arrays.asList(photoMedia).forEach(m -> podcast.getMedia().add(m));
+		Collections.singletonList(photoMedia).forEach(m -> podcast.getMedia().add(m));
+
 		repository.save(podcast);
 	}
 
@@ -109,7 +107,7 @@ class Recorder {
 		log.info("podcast audio file has been processed: " + event.toString());
 		var uid = event.getUid();
 		repository.findByUid(uid).ifPresentOrElse(podcast -> {
-			var uri = s3Service.createS3Uri(event.getBucketName(), "", event.getFileName());
+			var uri = s3Service.createS3Uri(event.getBucketName(), uid, event.getFileName());
 			podcast.setS3AudioUri(uri.toString());
 			podcast.setS3AudioFileName(event.getFileName());
 			repository.save(podcast);

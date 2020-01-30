@@ -12,7 +12,7 @@ import java.util.Collection;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class UnzipUtils {
+public abstract class UnzipUtils {
 
 	@SneakyThrows
 	public static Collection<File> unzip(File zipfile, File targetDirectory) {

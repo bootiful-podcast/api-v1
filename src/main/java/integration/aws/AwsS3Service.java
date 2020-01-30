@@ -65,8 +65,6 @@ public class AwsS3Service {
 	@SneakyThrows
 	private URI upload(String bucketName, String contentType, String nestedBucketFolder, File file) {
 		if (file.length() > 0) {
-			log.info("trying to upload the file " + file.getAbsolutePath() + " to bucket " + bucketName
-					+ " with content type " + contentType + " and nested folder " + nestedBucketFolder);
 			var objectMetadata = new ObjectMetadata();
 			objectMetadata.setContentType(contentType);
 			objectMetadata.setContentLength(file.length());
@@ -74,7 +72,10 @@ public class AwsS3Service {
 					bucketName + (nestedBucketFolder == null ? "" : "/" + nestedBucketFolder), file.getName(), file);
 			var putObjectResult = this.s3.putObject(request);
 			Assert.notNull(putObjectResult, "the S3 file hasn't been uploaded");
-			return this.createS3Uri(bucketName, nestedBucketFolder, file.getName());
+			var uri = this.createS3Uri(bucketName, nestedBucketFolder, file.getName());
+			log.info("uploaded the file " + file.getAbsolutePath() + " to bucket " + bucketName + " with content type "
+					+ contentType + " and nested folder " + nestedBucketFolder + ". The resulting URI is " + uri);
+			return uri;
 		}
 		return null;
 	}
@@ -93,7 +94,7 @@ public class AwsS3Service {
 			Assert.notNull(object, "the fetch of the object should not be null");
 		}
 		catch (Exception e) {
-			log.warn("No object of this key name " + key + "exists in this bucket, " + bucket);
+			log.warn("No object of this key name " + key + " exists in this bucket, " + bucket);
 			return null;
 		}
 		return String.format("s3://%s/%s", bucket, key);

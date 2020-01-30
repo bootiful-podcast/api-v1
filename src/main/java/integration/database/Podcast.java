@@ -15,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Table(indexes = { @Index(columnList = "uid", unique = true) })
 public class Podcast {
 
 	@Id
@@ -23,7 +24,12 @@ public class Podcast {
 
 	private String uid; // this is to support correlation later on
 
-	private String title, description, notes, transcript;
+	private String title;
+
+	@Column(length = 2000)
+	private String description;
+
+	private String notes, transcript;
 
 	@Column(name = "s3_audio_uri")
 	private String s3AudioUri;
@@ -65,10 +71,10 @@ public class Podcast {
 	public String toString() {
 		return "Podcast{" + "id=" + id + ", uid='" + uid + '\'' + ", title='" + title + '\'' + ", description='"
 				+ description + '\'' + ", notes='" + notes + '\'' + ", transcript='" + transcript + '\''
-				+ ", mediaS3Uri='" + s3AudioUri + '\'' + ", s3OutputFileName='" + s3AudioFileName + '\''
-				+ ", s3EpisodePhoto='" + s3PhotoFileName + '\'' + ", podbeanDraftCreated=" + podbeanDraftCreated
-				+ ", podbeanDraftPublished=" + podbeanDraftPublished + ", podbeanMediaUri='" + podbeanMediaUri + '\''
-				+ ", date=" + date + ", links=" + links + ", media=" + media + '}';
+				+ ", s3AudioUri='" + s3AudioUri + '\'' + ", s3PhotoUri='" + s3PhotoUri + '\'' + ", s3AudioFileName='"
+				+ s3AudioFileName + '\'' + ", s3PhotoFileName='" + s3PhotoFileName + '\'' + ", podbeanDraftCreated="
+				+ podbeanDraftCreated + ", podbeanDraftPublished=" + podbeanDraftPublished + ", podbeanMediaUri='"
+				+ podbeanMediaUri + '\'' + ", podbeanPhotoUri='" + podbeanPhotoUri + '\'' + ", date=" + date + '}';
 	}
 
 }

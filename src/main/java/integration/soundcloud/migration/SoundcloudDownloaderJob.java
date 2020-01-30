@@ -1,9 +1,7 @@
 package integration.soundcloud.migration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import integration.XmlUtils;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import integration.utils.XmlUtils;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.context.event.ApplicationReadyEvent;

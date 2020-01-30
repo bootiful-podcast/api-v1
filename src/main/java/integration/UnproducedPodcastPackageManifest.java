@@ -1,5 +1,6 @@
 package integration;
 
+import integration.utils.XmlUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
