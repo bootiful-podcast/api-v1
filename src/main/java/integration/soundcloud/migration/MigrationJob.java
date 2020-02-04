@@ -35,13 +35,12 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.FileSystemUtils;
 
 import java.io.File;
 import java.io.FileReader;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -66,13 +65,43 @@ class MigrationJob {
 
 	private final PipelineProperties properties;
 
+	private boolean shouldHandleDirectory(File file) {
+		var img = new File(file, "image.jpg");
+		var lengthLessThan1Mb = (img.length() < (1000 * 1000));
+		log.info("we're returning " + lengthLessThan1Mb + " for " + file.getAbsolutePath() + ".");
+		return lengthLessThan1Mb;
+	}
+
 	@EventListener(ApplicationReadyEvent.class)
 	public void run() {
+		this.reset();
 		var outboundQueue = onwardToTheReplyQueue();
-		Stream.of(Objects.requireNonNull(
-				MigrationUtils.getRoot().listFiles(pathname -> pathname.isDirectory() && pathname.exists())))
+		Stream.of(Objects.requireNonNull(MigrationUtils.getRoot().listFiles(
+				directory -> directory.isDirectory() && directory.exists() && shouldHandleDirectory(directory))))
 				.map(f -> this.installPodcastRecords(outboundQueue, f)).peek(log::info)
 				.forEach(p -> this.transactionTemplate.executeWithoutResult(status -> log.info(p)));
+	}
+
+	@SneakyThrows
+	private void reset() {
+
+		/*
+		// reset the DB
+		 Arrays.asList("delete from podcast_link; delete from podcast_media; delete from
+		  podcast; delete from media; delete from link; delete from
+		  mappings".split(";")).forEach(template::update);
+ 	*/
+		// reset the file system
+		var desktop = new File(System.getProperty("user.home"), "Desktop");
+		var soundcloud = new File(desktop, "soundcloud");
+		var backup = new File(desktop, "soundcloud-full-backup");
+		Stream.of(desktop, backup)
+				.forEach(f -> Assert.isTrue(f.exists(), f.getAbsolutePath() + " does not exist, but should"));
+		Assert.isTrue(!soundcloud.exists() || FileSystemUtils.deleteRecursively(soundcloud),
+				"the directory " + soundcloud.getAbsolutePath() + " could not be deleted.");
+		FileSystemUtils.copyRecursively(backup, soundcloud);
+		Assert.isTrue(soundcloud.exists(),
+				"the soundcloud directory does not exist, and so processing should terminate.");
 	}
 
 	@Data
@@ -90,11 +119,11 @@ class MigrationJob {
 
 	@Bean
 	IntegrationFlow sendFinishedPodcastsToTheRestOfThePipeline(RabbitTemplate rabbitTemplate) {
-		return IntegrationFlows.from(this.onwardToTheReplyQueue()).transform(String.class, s -> {
-			log.info(s);
-			return s;
-		}).handle(Amqp.outboundAdapter(rabbitTemplate).exchangeName(this.properties.getProcessor().getRepliesQueue())
-				.routingKey(this.properties.getProcessor().getRepliesRoutingKey())).get();
+		return IntegrationFlows.from(this.onwardToTheReplyQueue())
+				.handle(Amqp.outboundAdapter(rabbitTemplate)
+						.exchangeName(this.properties.getProcessor().getRepliesQueue())
+						.routingKey(this.properties.getProcessor().getRepliesRoutingKey()))
+				.get();
 	}
 
 	private Map<String, Object> replyMessage(String uid) {
@@ -120,6 +149,14 @@ class MigrationJob {
 		return target;
 	}
 
+	private String getUidForGuid(String guid) {
+		var listOfMaps = this.template.queryForList("select uid, json_guid from mappings where json_guid = ? ", guid)
+				.stream()//
+				.map(m -> (String) m.get("uid"))//
+				.collect(Collectors.toList());
+		return listOfMaps.size() > 0 ? listOfMaps.get(0) : null;
+	}
+
 	@SneakyThrows
 	private Podcast installPodcastRecords(MessageChannel messageChannel, File folder) {
 
@@ -127,11 +164,17 @@ class MigrationJob {
 		var soundCloudPodcast = (SoundcloudPodcast) this.jsonHelper
 				.fromJson(FileCopyUtils.copyToString(new FileReader(json)), SoundcloudPodcast.class);
 		var existingGuid = soundCloudPodcast.getGuid();
+
+		if ((getUidForGuid(existingGuid)) != null) {
+			log.info("there is already a record for UID " + existingGuid + " so we will not attempt to migrate it. "
+					+ "If you worry it's in an inconsistent state, delete all the data.");
+			return null;
+		}
+
 		this.template.update("INSERT INTO mappings(uid, json_guid) VALUES(?,?) ON CONFLICT DO NOTHING ",
 				UUID.randomUUID().toString(), existingGuid);
-		var next = this.template.queryForList("select uid, json_guid from mappings where json_guid = ? ", existingGuid)
-				.iterator().next();
-		var uid = (String) next.get("uid");
+
+		var uid = getUidForGuid(existingGuid);
 		var audio = relocate(new File(folder, "audio.mp3"), uid);
 		var image = relocate(new File(folder, "image.jpg"), uid);
 
@@ -146,6 +189,9 @@ class MigrationJob {
 				soundCloudPodcast.getDescription(), audio.getName(), image.getName());
 		this.publisher.publishEvent(new PodcastArchiveUploadedEvent(uploadPackageManifest));
 		return PipelineUtils.podcastOrElseThrow(uid, this.repository.findByUid(uid).map(podcast -> {
+			podcast.setDate(soundCloudPodcast.getPubDate());
+			repository.save(podcast);
+
 			log.info("there is no Podcast with the UID " + uid + ", so we'll create it.");
 			var uploads = List.of(new Upload(AssetTypes.TYPE_PHOTO, image, MediaType.IMAGE_JPEG),
 					new Upload(AssetTypes.TYPE_PRODUCED_AUDIO, audio, MediaType.parseMediaType("audio/mpeg3")));
@@ -157,10 +203,6 @@ class MigrationJob {
 				this.publisher.publishEvent(new PodcastArtifactsUploadedToProcessorEvent(uid, upload.getAssetType(),
 						s3Uri.toString(), upload.getFile()));
 			});
-			// var imageUpload = uploads.get(0);
-			// this.retryTemplate.execute(context ->
-			// this.awsS3Service.uploadOutputFile(imageUpload.getMediaType().toString(),
-			// uid, imageUpload.getFile()));
 			var mapAsAString = this.jsonHelper.toJson(replyMessage(uid));
 			var sent = messageChannel.send(MessageBuilder.withPayload(mapAsAString).build());
 			log.info("sending the following message to the next stage in the pipeline " + mapAsAString
