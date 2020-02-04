@@ -86,11 +86,10 @@ class MigrationJob {
 	private void reset() {
 
 		/*
-		// reset the DB
-		 Arrays.asList("delete from podcast_link; delete from podcast_media; delete from
-		  podcast; delete from media; delete from link; delete from
-		  mappings".split(";")).forEach(template::update);
- 	*/
+		 * // reset the DB Arrays.asList("delete from podcast_link; delete from
+		 * podcast_media; delete from podcast; delete from media; delete from link; delete
+		 * from mappings".split(";")).forEach(template::update);
+		 */
 		// reset the file system
 		var desktop = new File(System.getProperty("user.home"), "Desktop");
 		var soundcloud = new File(desktop, "soundcloud");
