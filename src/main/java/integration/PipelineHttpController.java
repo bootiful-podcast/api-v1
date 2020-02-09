@@ -97,7 +97,7 @@ class PipelineHttpController {
 				.orElseThrow(
 						() -> new IllegalArgumentException("couldn't produce a valid host for the CORS Origin header"));
 
-		log.debug("the response is " + response);
+		log.info("the recommended " + HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN + " header is " + response);
 		return response;
 	}
 
