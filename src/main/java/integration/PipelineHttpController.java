@@ -73,20 +73,14 @@ class PipelineHttpController {
 		return response.map(reply -> ResponseEntity.ok().body(reply)).orElse(ResponseEntity.noContent().build());
 	}
 
-	private void debugHeaders(RequestEntity<?> requestEntity) {
-		log.info("---------------------------------------");
-		requestEntity.getHeaders().forEach((header, value) -> log.info(header + ':' + value));
-		log.info("---------------------------------------");
-		Objects.requireNonNull(requestEntity.getHeaders().get("referer")).forEach(r -> log.info("referer: " + r));
-	}
-
 	private String buildAccessControlAllowOriginHeader(RequestEntity<?> requestEntity) {
 		var localhost = "localhost:9090";
 		var bootifulPodcastFmHost = "bootifulpodcast.fm";
 		var list = new ArrayList<>(
 				requestEntity.getHeaders().getOrDefault(HttpHeaders.REFERER.toLowerCase(), new ArrayList<>()));
 		list.add(requestEntity.getHeaders().getOrigin());
-		var response = list//
+
+		return list//
 				.stream()//
 				.filter(Objects::nonNull)//
 				.map(String::toLowerCase)//
@@ -94,11 +88,7 @@ class PipelineHttpController {
 				.map(host -> (host.contains(localhost)) ? "http://" + localhost
 						: this.accessControlAllowOriginHeaderValue)//
 				.findFirst()//
-				.orElseThrow(
-						() -> new IllegalArgumentException("couldn't produce a valid host for the CORS Origin header"));
-
-		log.info("the recommended " + HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN + " header is " + response);
-		return response;
+				.orElse(this.accessControlAllowOriginHeaderValue);
 	}
 
 	@SneakyThrows
