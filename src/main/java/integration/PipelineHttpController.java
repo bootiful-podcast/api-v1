@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Log4j2
 @RestController
@@ -69,30 +73,64 @@ class PipelineHttpController {
 		return response.map(reply -> ResponseEntity.ok().body(reply)).orElse(ResponseEntity.noContent().build());
 	}
 
+	private void debugHeaders(RequestEntity<?> requestEntity) {
+		log.info("---------------------------------------");
+		requestEntity.getHeaders().forEach((header, value) -> log.info(header + ':' + value));
+		log.info("---------------------------------------");
+		Objects.requireNonNull(requestEntity.getHeaders().get("referer")).forEach(r -> log.info("referer: " + r));
+	}
+
+	private String buildAccessControlAllowOriginHeader(RequestEntity<?> requestEntity) {
+		var localhost = "localhost:9090";
+		var bootifulPodcastFmHost = "bootifulpodcast.fm";
+		var list = new ArrayList<>(
+				requestEntity.getHeaders().getOrDefault(HttpHeaders.REFERER.toLowerCase(), new ArrayList<>()));
+		list.add(requestEntity.getHeaders().getOrigin());
+		var response = list//
+				.stream()//
+				.filter(Objects::nonNull)//
+				.map(String::toLowerCase)//
+				.filter(host -> host.contains(localhost) || host.contains(bootifulPodcastFmHost))//
+				.map(host -> {
+					if (host.contains(localhost)) {
+						return "http://" + localhost;
+					}
+					else {
+						return this.accessControlAllowOriginHeaderValue;
+					}
+				})//
+				.findFirst()//
+				.orElseThrow(
+						() -> new IllegalArgumentException("couldn't produce a valid host for the CORS Origin header"));
+
+		log.debug("the response is " + response);
+		return response;
+	}
+
 	@SneakyThrows
 	@GetMapping("/podcasts/{uid}/profile-photo")
-	ResponseEntity<Resource> getProfilePhotoMedia(@PathVariable String uid) {
+	ResponseEntity<Resource> getProfilePhotoMedia(RequestEntity<?> requestEntity, @PathVariable String uid) {
+
 		PipelineService.S3Resource podcastPhotoMedia = service.getPodcastPhotoMedia(uid);
 		return ResponseEntity.ok()//
 				.header("X-Podcast-UID", uid)//
-				.header(HttpHeaders.ACCEPT_RANGES, "none").contentType(this.photoContentType)//
+				.header(HttpHeaders.ACCEPT_RANGES, "none")//
+				.contentType(this.photoContentType)//
 				.contentLength(podcastPhotoMedia.contentLength())
-				// .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" +
-				// uid + ".jpg" + "\"")//
-				.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, this.accessControlAllowOriginHeaderValue)
+				.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, buildAccessControlAllowOriginHeader(requestEntity))
 				.body(podcastPhotoMedia);
 	}
 
 	@SneakyThrows
 	@GetMapping({ "/podcasts/{uid}/produced-audio", "/podcasts/{uid}/produced-audio.mp3" })
-	ResponseEntity<Resource> getProducedAudioMedia(@PathVariable String uid) {
+	ResponseEntity<Resource> getProducedAudioMedia(RequestEntity<?> requestEntity, @PathVariable String uid) {
 		PipelineService.S3Resource podcastAudioMedia = service.getPodcastAudioMedia(uid);
 		return ResponseEntity.ok()//
 				.header("X-Podcast-UID", uid)//
 				.contentType(this.audioContentType)//
 				.contentLength(podcastAudioMedia.contentLength())//
 				.header(HttpHeaders.ACCEPT_RANGES, "none")//
-				.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, this.accessControlAllowOriginHeaderValue)
+				.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, buildAccessControlAllowOriginHeader(requestEntity))
 				.body(podcastAudioMedia);
 	}
 

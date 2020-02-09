@@ -30,27 +30,10 @@ import org.springframework.messaging.MessageHeaders;
  * Step2ProcessorReplyIntegrationConfiguration</LI>
  * </OL>
  */
-// TODO
 @Log4j2
 @Configuration
 @RequiredArgsConstructor
 class Step1PreproducedIntegrationConfiguration {
-
-	private final ApplicationEventPublisher publisher;
-
-	/*
-	 * @Bean IntegrationFlow fastTrackIntegrationFlow() { return IntegrationFlows //
-	 * .from(this.preproducedPipelineMessageChannel())// .handle(ProducedPodcast.class,
-	 * (producedPodcast, messageHeaders) -> {
-	 *
-	 * var uploadPackageManifest = PreproducedPodcastPackageManifest.from(
-	 * producedPodcast.getUid(), producedPodcast.getTitle(),
-	 * producedPodcast.getDescription(), producedPodcast.getProducedAudio().getName(),
-	 * producedPodcast.getEpisodePhoto().getName()); publisher.publishEvent(new
-	 * PodcastArchiveUploadedEvent(uploadPackageManifest));
-	 *
-	 * return null; }).get(); }
-	 */
 
 	@Bean
 	MessageChannel preproducedPipelineMessageChannel() {
