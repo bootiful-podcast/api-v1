@@ -91,14 +91,8 @@ class PipelineHttpController {
 				.filter(Objects::nonNull)//
 				.map(String::toLowerCase)//
 				.filter(host -> host.contains(localhost) || host.contains(bootifulPodcastFmHost))//
-				.map(host -> {
-					if (host.contains(localhost)) {
-						return "http://" + localhost;
-					}
-					else {
-						return this.accessControlAllowOriginHeaderValue;
-					}
-				})//
+				.map(host -> (host.contains(localhost)) ? "http://" + localhost
+						: this.accessControlAllowOriginHeaderValue)//
 				.findFirst()//
 				.orElseThrow(
 						() -> new IllegalArgumentException("couldn't produce a valid host for the CORS Origin header"));
