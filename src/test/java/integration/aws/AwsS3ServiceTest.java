@@ -36,9 +36,8 @@ public class AwsS3ServiceTest {
 		var sampleImageBeforeUpload = File.createTempFile("sample-image-before-upload", ".jpg");
 		var sampleImageAfterUpload = File.createTempFile("sample-image-after-upload", ".jpg");
 		try {
-
 			CopyUtils.copy(this.resource.getInputStream(), sampleImageBeforeUpload);
-			amazonS3Service.uploadInputFile(MediaType.IMAGE_JPEG_VALUE, "test", sampleImageBeforeUpload);
+			this.amazonS3Service.uploadInputFile(MediaType.IMAGE_JPEG_VALUE, "test", sampleImageBeforeUpload);
 			var s3Object = amazonS3Service.downloadInputFile("test", sampleImageBeforeUpload.getName());
 			CopyUtils.copy(s3Object.getObjectContent(), sampleImageAfterUpload);
 			Assert.assertTrue(sampleImageAfterUpload.length() > 0);
@@ -47,18 +46,6 @@ public class AwsS3ServiceTest {
 		finally {
 			Arrays.asList(sampleImageAfterUpload, sampleImageBeforeUpload).forEach(File::delete);
 		}
-	}
-
-	private static AmazonS3 amazonS3(String accessKey, String secret, String region) {
-		var credentials = new BasicAWSCredentials(accessKey, secret);
-		var timeout = 5 * 60 * 1000;
-		var clientConfiguration = new ClientConfiguration().withClientExecutionTimeout(timeout)
-				.withConnectionMaxIdleMillis(timeout).withConnectionTimeout(timeout).withConnectionTTL(timeout)
-				.withRequestTimeout(timeout);
-
-		return AmazonS3ClientBuilder.standard().withClientConfiguration(clientConfiguration)
-				.withCredentials(new AWSStaticCredentialsProvider(credentials)).withRegion(Regions.fromName(region))
-				.build();
 	}
 
 }
