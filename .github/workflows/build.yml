@@ -51,7 +51,7 @@ jobs:
         run: mvn -Dspring.profiles.active=ci verify deploy
 
       - name: Deploy to Cloud Foundry
-      - run: |
+        run: |
           cd $GITHUB_WORKSPACE
           ./deploy/cf.sh
           ./deploy/deploy.sh
