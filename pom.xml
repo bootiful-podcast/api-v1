@@ -92,6 +92,14 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>1.10.6</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
     <dependencyManagement>
         <dependencies>
@@ -131,7 +139,7 @@
                             </deployProperties>
                             <publisher>
                                 <contextUrl>
-                                    https://cloudnativejava.artifactoryonline.com/cloudnativejava
+                                    https://cloudnativejava.jfrog.io/cloudnativejava
                                 </contextUrl>
                                 <username>${env.ARTIFACTORY_USERNAME}</username>
                                 <password>${env.ARTIFACTORY_PASSWORD}</password>

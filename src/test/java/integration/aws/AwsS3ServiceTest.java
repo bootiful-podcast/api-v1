@@ -1,30 +1,45 @@
 package integration.aws;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import integration.PipelineProperties;
 import integration.utils.CopyUtils;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.io.File;
 import java.util.Arrays;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@ContextConfiguration(initializers = { AwsS3ServiceTest.Initializer.class })
 public class AwsS3ServiceTest {
+
+	@ClassRule
+	public static PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer("postgres:11.1")
+			.withDatabaseName("integration-tests-db").withUsername("sa").withPassword("sa");
+
+	static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+
+		public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
+			TestPropertyValues
+					.of("spring.datasource.url=" + postgreSQLContainer.getJdbcUrl(),
+							"spring.datasource.username=" + postgreSQLContainer.getUsername(),
+							"spring.datasource.password=" + postgreSQLContainer.getPassword())
+					.applyTo(configurableApplicationContext.getEnvironment());
+		}
+
+	}
 
 	private final Resource resource = new ClassPathResource("/sample-image.jpg");
 
@@ -38,7 +53,7 @@ public class AwsS3ServiceTest {
 		try {
 			CopyUtils.copy(this.resource.getInputStream(), sampleImageBeforeUpload);
 			this.amazonS3Service.uploadInputFile(MediaType.IMAGE_JPEG_VALUE, "test", sampleImageBeforeUpload);
-			var s3Object = amazonS3Service.downloadInputFile("test", sampleImageBeforeUpload.getName());
+			var s3Object = this.amazonS3Service.downloadInputFile("test", sampleImageBeforeUpload.getName());
 			CopyUtils.copy(s3Object.getObjectContent(), sampleImageAfterUpload);
 			Assert.assertTrue(sampleImageAfterUpload.length() > 0);
 			Assert.assertEquals(sampleImageBeforeUpload.length(), sampleImageAfterUpload.length());
