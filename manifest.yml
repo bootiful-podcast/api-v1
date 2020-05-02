@@ -2,7 +2,8 @@
 applications:
   - name: api
     path: target/service-0.0.1-SNAPSHOT.jar
-    buildpack: https://github.com/cloudfoundry/java-buildpack.git
+    buildpacks:
+      - https://github.com/cloudfoundry/java-buildpack.git
     random-route: true
     memory: 2G
     disk_quota: 2G
@@ -11,7 +12,6 @@ applications:
       - bootiful-podcast-db
     routes:
       - route: bootiful-podcast-api.cfapps.io
-#      - route: api.bootifulpodcasts.fm
     env:
       SPRING_PROFILES_ACTIVE: cloud
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+}}'
