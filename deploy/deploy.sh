@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+source "$(cd $(dirname $0) && pwd)/env.sh"
 
 APP_NAME=api
 
