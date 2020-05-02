@@ -1,5 +1,7 @@
 # The Podcast API 
 
+![API](https://github.com/bootiful-podcast/api/workflows/API/badge.svg)
+
 This service is the clearing house for new podcast packages uploaded 
 using the Podcast shell. Here's the basic workflow. 
 
