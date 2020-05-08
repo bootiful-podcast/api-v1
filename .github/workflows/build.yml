@@ -36,20 +36,20 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      # - name: Set up JDK 14
-      #   uses: actions/setup-java@v1
-      #   with:
-      #     java-version: 14
+      - name: Set up JDK 14
+        uses: actions/setup-java@v1
+        with:
+          java-version: 14
 
-      # - name: Cache Maven packages
-      #   uses: actions/cache@v1
-      #   with:
-      #     path: ~/.m2/repository
-      #     key: ${{ runner.os }}-m2
-      #     restore-keys: ${{ runner.os }}-m2
+      - name: Cache Maven packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2
+          restore-keys: ${{ runner.os }}-m2
 
-      # - name: Build the application
-      #   run: mvn -Dspring.profiles.active=ci verify deploy
+      - name: Build the application
+        run: mvn -Dspring.profiles.active=ci verify deploy
 
       - name: Deploy to Cloud Foundry
         run: |
@@ -60,6 +60,6 @@ jobs:
               fi 
           fi
           echo "BP_MODE=${BP_MODE}" 
-          # cd $GITHUB_WORKSPACE
-          # ./deploy/cf.sh
-          # ./deploy/deploy.sh
+          cd $GITHUB_WORKSPACE
+          ./deploy/cf.sh
+          ./deploy/deploy.sh
