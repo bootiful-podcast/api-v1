@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 source "$(cd $(dirname $0) && pwd)/env.sh"
 
+
+
 #####
 export BP_MODE="development"
 if [ "$GITHUB_EVENT_NAME" = "create" ]; then
@@ -18,6 +20,8 @@ for V in ${VARIABLE_NAMES[*]}; do
   eval $TO_EVAL
 done
 #####
+
+mvn -Dspring.profiles.active=ci verify deploy || die "could not build and deploy the artifact to Artifactory."
 
 APP_NAME=api
 if [[ "$BP_MODE" = "development" ]]; then

@@ -65,6 +65,5 @@ jobs:
           fi
           echo "BP_MODE=${BP_MODE}" 
           cd $GITHUB_WORKSPACE
-          mvn -Dspring.profiles.active=ci verify deploy || die "could not build and deploy the artifact to Artifactory."
           ./deploy/cf.sh
           ./deploy/deploy.sh
