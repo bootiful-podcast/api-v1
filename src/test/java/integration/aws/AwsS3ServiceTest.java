@@ -26,8 +26,10 @@ import java.util.Arrays;
 public class AwsS3ServiceTest {
 
 	@ClassRule
-	public static PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer("postgres:11.1")
-			.withDatabaseName("integration-tests-db").withUsername("sa").withPassword("sa");
+	public static PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer("postgres:11.1")//
+			.withDatabaseName("integration-tests-db") //
+			.withUsername("sa")//
+			.withPassword("sa");
 
 	static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 

@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 source "$(cd $(dirname $0) && pwd)/env.sh"
+##
+## S3 buckets
+BUCKET_SUFFIX="-development"
+if [[ "$BP_MODE" = "production" ]]; then
+    BUCKET_SUFFIX=""
+fi
+export PODCAST_PIPELINE_S3_INPUT_BUCKET_NAME=podcast-input-bucket${BUCKET_SUFFIX}
+export PODCAST_PIPELINE_S3_OUTPUT_BUCKET_NAME=podcast-output-bucket${BUCKET_SUFFIX}
+
 
 
 
@@ -60,14 +69,9 @@ cf set-env $APP_NAME AWS_SECRET_ACCESS_KEY $AWS_SECRET_ACCESS_KEY
 cf set-env $APP_NAME AWS_REGION $AWS_REGION
 cf set-env $APP_NAME AWS_ACCESS_KEY_ID $AWS_ACCESS_KEY_ID
 ##
-## S3 buckets
-BUCKET_SUFFIX="-development"
-if [[ "$BP_MODE" = "production" ]]; then
-    BUCKET_SUFFIX=""
-fi
-cf set-env $APP_NAME PODCAST_PIPELINE_S3_INPUT_BUCKET_NAME podcast-input-bucket${BUCKET_SUFFIX}
-cf set-env $APP_NAME PODCAST_PIPELINE_S3_OUTPUT_BUCKET_NAME podcast-output-bucket${BUCKET_SUFFIX}
-
+## S3 Buckets
+cf set-env $APP_NAME PODCAST_PIPELINE_S3_INPUT_BUCKET_NAME $PODCAST_PIPELINE_S3_INPUT_BUCKET_NAME
+cf set-env $APP_NAME PODCAST_PIPELINE_S3_OUTPUT_BUCKET_NAME $PODCAST_PIPELINE_S3_OUTPUT_BUCKET_NAME
 ##
 ## We need to correctly bind either the DEV or the PROD PWS services
 SVC_SUFFIX=""
