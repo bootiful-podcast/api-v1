@@ -33,12 +33,8 @@ cf push -k 2GB -m 2GB -b java_buildpack --no-start -p target/api-0.0.1-SNAPSHOT.
 cf set-env $APP_NAME JBP_CONFIG_OPEN_JDK_JRE '{ jre: { version: 11.+}}'
 cf set-env $APP_NAME BP_MODE $BP_MODE
 
-#cf unset-env $APP_NAME SPRING_PROFILES_ACTIVE
 cf set-env $APP_NAME SPRING_PROFILES_ACTIVE cloud
 
-#if [ "$BP_MODE"  = "production" ]; then
-
-#fi
 ##
 ## CloudFoundry
 cf set-env $APP_NAME CF_API $CF_API
@@ -63,6 +59,14 @@ cf set-env $APP_NAME PODBEAN_CLIENT_SECRET $PODBEAN_CLIENT_SECRET
 cf set-env $APP_NAME AWS_SECRET_ACCESS_KEY $AWS_SECRET_ACCESS_KEY
 cf set-env $APP_NAME AWS_REGION $AWS_REGION
 cf set-env $APP_NAME AWS_ACCESS_KEY_ID $AWS_ACCESS_KEY_ID
+##
+## S3 buckets
+BUCKET_SUFFIX="-development"
+if [[ "$BP_MODE" = "production" ]]; then
+    BUCKET_SUFFIX=""
+fi
+cf set-env $APP_NAME PODCAST_PIPELINE_S3_INPUT_BUCKET_NAME podcast-input-bucket${BUCKET_SUFFIX}
+cf set-env $APP_NAME PODCAST_PIPELINE_S3_OUTPUT_BUCKET_NAME podcast-output-bucket${BUCKET_SUFFIX}
 
 ##
 ## We need to correctly bind either the DEV or the PROD PWS services
