@@ -3,9 +3,18 @@ source "$(cd $(dirname $0) && pwd)/env.sh"
 
 APP_NAME=api
 
+
+
 cf push -k 2GB -m 2GB -b java_buildpack --no-start -p target/api-0.0.1-SNAPSHOT.jar ${APP_NAME}
 
-cf set-env ${APP_NAME} JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+}}'
+cf set-env ${APP_NAME} JBP_CONFIG_OPEN_JDK_JRE '{ jre: { version: 11.+}}'
+cf set-env $APP_NAME BP_MODE $BP_MODE
+
+cf unset-env $APP_NAME SPRING_PROFILES_ACTIVE
+
+if [ "$BP_MODE"  = "production" ]; then
+    cf set-env $APP_NAME SPRING_PROFILES_ACTIVE cloud
+fi
 ##
 ## CloudFoundry
 cf set-env $APP_NAME CF_API $CF_API
