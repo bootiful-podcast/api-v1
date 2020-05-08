@@ -15,16 +15,23 @@ env:
   CF_SPACE: ${{ secrets.CF_SPACE  }}
   CF_USER: ${{ secrets.CF_USER  }}
   PODCAST_RMQ_ADDRESS: ${{ secrets.PODCAST_RMQ_ADDRESS  }}
-  SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY  }}
-  PODBEAN_CLIENT_ID: ${{ secrets.PODBEAN_CLIENT_ID  }}
-  PODBEAN_CLIENT_SECRET: ${{ secrets.PODBEAN_CLIENT_SECRET  }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY  }}
-  AWS_REGION: ${{ secrets.AWS_REGION  }}
+  SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID  }}
-  
+  PODBEAN_CLIENT_ID_development: ${{ secrets.PODBEAN_CLIENT_ID_development  }}
+  PODBEAN_CLIENT_ID_production: ${{ secrets.PODBEAN_CLIENT_ID_production  }}
+  PODBEAN_CLIENT_SECRET_development: ${{ secrets.PODBEAN_CLIENT_SECRET_development  }}
+  PODBEAN_CLIENT_SECRET_production: ${{ secrets.PODBEAN_CLIENT_SECRET_production  }}
+  PODCAST_RMQ_ADDRESS_development: ${{ secrets.PODCAST_RMQ_ADDRESS_development  }}
+  PODCAST_RMQ_ADDRESS_production: ${{ secrets.PODCAST_RMQ_ADDRESS_production  }}
+  AWS_REGION_development: ${{ secrets.AWS_REGION_development  }}
+  AWS_REGION_production: ${{ secrets.AWS_REGION_production  }}
+  #  PODBEAN_CLIENT_ID: ${{ secrets.PODBEAN_CLIENT_ID  }}
+  #  PODBEAN_CLIENT_SECRET: ${{ secrets.PODBEAN_CLIENT_SECRET  }}
+  #  AWS_REGION: ${{ secrets.AWS_REGION  }}
 
 on:
-  create: 
+  create:
   push:
     branches: [ master ]
   pull_request:
@@ -51,7 +58,7 @@ jobs:
       - name: Build the application
         run: mvn -Dspring.profiles.active=ci verify deploy
 
-      - name: Deploy to Cloud Foundry
+      - name: Deploy
         run: |
           export BP_MODE="development"
           if [ "$GITHUB_EVENT_NAME" = "create" ]; then 

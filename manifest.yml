@@ -7,9 +7,9 @@ applications:
     random-route: true
     memory: 2G
     disk_quota: 2G
-    services:
-      - bootiful-podcast-mq
-      - bootiful-podcast-db
+#    services:
+#      - bootiful-podcast-mq
+#      - bootiful-podcast-db
     routes:
       - route: bootiful-podcast-api.cfapps.io
     env:

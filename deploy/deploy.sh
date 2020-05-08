@@ -1,20 +1,40 @@
 #!/usr/bin/env bash
 source "$(cd $(dirname $0) && pwd)/env.sh"
 
+#####
+export BP_MODE="development"
+if [ "$GITHUB_EVENT_NAME" = "create" ]; then
+  if [[ "${GITHUB_REF}" =~ "tags" ]]; then
+    BP_MODE="production"
+  fi
+fi
+
+echo "BP_MODE=${BP_MODE}"
+
+VARIABLE_NAMES=(AWS_REGION PODCAST_RMQ_ADDRESS PODBEAN_CLIENT_ID PODBEAN_CLIENT_SECRET)
+for V in ${VARIABLE_NAMES[*]}; do
+  TO_EVAL="export ${V}=\$${V}_${BP_MODE}"
+  echo $TO_EVAL
+  eval $TO_EVAL
+done
+#####
+
 APP_NAME=api
-
-
+if [[ "$BP_MODE" = "development" ]]; then
+    APP_NAME=${APP_NAME}_${BP_MODE}
+fi
 
 cf push -k 2GB -m 2GB -b java_buildpack --no-start -p target/api-0.0.1-SNAPSHOT.jar ${APP_NAME}
 
-cf set-env ${APP_NAME} JBP_CONFIG_OPEN_JDK_JRE '{ jre: { version: 11.+}}'
+cf set-env $APP_NAME JBP_CONFIG_OPEN_JDK_JRE '{ jre: { version: 11.+}}'
 cf set-env $APP_NAME BP_MODE $BP_MODE
 
-cf unset-env $APP_NAME SPRING_PROFILES_ACTIVE
+#cf unset-env $APP_NAME SPRING_PROFILES_ACTIVE
+cf set-env $APP_NAME SPRING_PROFILES_ACTIVE cloud
 
-if [ "$BP_MODE"  = "production" ]; then
-    cf set-env $APP_NAME SPRING_PROFILES_ACTIVE cloud
-fi
+#if [ "$BP_MODE"  = "production" ]; then
+
+#fi
 ##
 ## CloudFoundry
 cf set-env $APP_NAME CF_API $CF_API
@@ -39,6 +59,17 @@ cf set-env $APP_NAME PODBEAN_CLIENT_SECRET $PODBEAN_CLIENT_SECRET
 cf set-env $APP_NAME AWS_SECRET_ACCESS_KEY $AWS_SECRET_ACCESS_KEY
 cf set-env $APP_NAME AWS_REGION $AWS_REGION
 cf set-env $APP_NAME AWS_ACCESS_KEY_ID $AWS_ACCESS_KEY_ID
+
+##
+## We need to correctly bind either the DEV or the PROD PWS services
+SVC_SUFFIX=""
+if [[  "$BP_MODE" = "development"  ]]; then
+ SVC_SUFFIX="-dev"
+fi
+DB_SVC_NAME=bootiful-podcast-db${SVC_SUFFIX}
+MQ_SVC_NAME=bootiful-podcast-mq${SVC_SUFFIX}
+cf bs ${APP_NAME} ${MQ_SVC_NAME}
+cf bs ${APP_NAME} ${DB_SVC_NAME}
 
 cf restart $APP_NAME
 
