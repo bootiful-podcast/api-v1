@@ -53,8 +53,13 @@ jobs:
 
       - name: Deploy to Cloud Foundry
         run: |
-          echo $GITHUB_EVENT_NAME
-          env 
+          export BP_MODE="development"
+          if [ "$GITHUB_EVENT_NAME" = "create" ]; then 
+              if [[  "${GITHUB_REF}" =~ "tags" ]]; then 
+                  BP_MODE="production"
+              fi 
+          fi
+          echo "BP_MODE=${BP_MODE}" 
           # cd $GITHUB_WORKSPACE
           # ./deploy/cf.sh
           # ./deploy/deploy.sh
