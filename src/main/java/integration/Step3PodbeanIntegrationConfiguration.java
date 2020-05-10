@@ -16,6 +16,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -23,14 +24,12 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.integration.handler.GenericHandler;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.Optional;
-import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * This is step 3 in the flow.
@@ -42,9 +41,13 @@ import java.util.function.Function;
 class Step3PodbeanIntegrationConfiguration {
 
 	@Bean
-	IntegrationFlow podbeanPublicationPipeline(ApplicationEventPublisher publisher, AwsS3Service s3Service,
-			AmqpTemplate template, ConnectionFactory connectionFactory, PodcastRepository repository,
-			PodbeanClient podbeanClient, PipelineProperties pipelineProperties) {
+	IntegrationFlow podbeanPublicationPipeline(GenericApplicationContext context, ApplicationEventPublisher publisher,
+			AwsS3Service s3Service, AmqpTemplate template, ConnectionFactory connectionFactory,
+			PodcastRepository repository, PodbeanClient podbeanClient, PipelineProperties pipelineProperties) {
+
+		var publishPodbeanPodcasts = Stream.of(context.getEnvironment().getActiveProfiles())
+				.anyMatch(p -> p.equalsIgnoreCase("production"));
+		var episodeStatus = publishPodbeanPodcasts ? EpisodeStatus.PUBLISH : EpisodeStatus.DRAFT;
 
 		var siteGeneratorRequests = Amqp//
 				.outboundAdapter(template)//
@@ -79,8 +82,9 @@ class Step3PodbeanIntegrationConfiguration {
 					var jpgFile = new File(podbeanDirectory, jpgFileName);
 					this.downloadFromS3(s3Service, podcast, jpgFile, jpgFileName);
 					var jpgUpload = podbeanClient.upload(MediaType.IMAGE_JPEG, jpgFile, jpgFile.length());
+
 					var episode = podbeanClient.publishEpisode(podcast.getTitle(), podcast.getDescription(),
-							EpisodeStatus.PUBLISH, EpisodeType.PUBLIC, mp3Upload.getFileKey(), jpgUpload.getFileKey());
+							episodeStatus, EpisodeType.PUBLIC, mp3Upload.getFileKey(), jpgUpload.getFileKey());
 					publisher.publishEvent(new PodcastPublishedToPodbeanEvent(podcast.getUid(), episode.getMediaUrl(),
 							episode.getPlayerUrl(), episode.getLogoUrl()));
 					log.info("the episode has been published to " + episode.toString() + '.');
