@@ -29,16 +29,14 @@ done
 
 mvn -Dspring.profiles.active=ci verify deploy || die "could not build and deploy the artifact to Artifactory."
 
+ROUTE_HOSTNAME=bootiful-podcast-api
 APP_NAME=api
 if [[ "$BP_MODE" = "development" ]]; then
     APP_NAME=${APP_NAME}_${BP_MODE}
+    ROUTE_HOSTNAME=${ROUTE_HOSTNAME}-development
 fi
 
-ROUTE_HOSTNAME=bootiful-podcast-api-${BP_MODE:-development}
-
 cf push -k 2GB -m 2GB -b java_buildpack --no-start --no-route -p target/api-0.0.1-SNAPSHOT.jar ${APP_NAME}
-
-
 cf set-env $APP_NAME JBP_CONFIG_OPEN_JDK_JRE '{ jre: { version: 11.+}}'
 cf set-env $APP_NAME BP_MODE $BP_MODE
 cf set-env $APP_NAME SPRING_PROFILES_ACTIVE cloud
