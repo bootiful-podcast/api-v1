@@ -32,7 +32,7 @@ mvn -Dspring.profiles.active=ci verify deploy || die "could not build and deploy
 ROUTE_HOSTNAME=bootiful-podcast-api
 APP_NAME=api
 if [[ "$BP_MODE" = "development" ]]; then
-    APP_NAME=${APP_NAME}_${BP_MODE}
+    APP_NAME=${APP_NAME}-${BP_MODE}
     ROUTE_HOSTNAME=${ROUTE_HOSTNAME}-development
 fi
 
@@ -50,7 +50,6 @@ cf set-env $APP_NAME CF_SPACE $CF_SPACE
 cf set-env $APP_NAME CF_USER $CF_USER
 ##
 ## RabbitMQ
-#cf set-env $APP_NAME RMQ_ADDRESS $RMQ_ADDRESS
 cf set-env $APP_NAME PODCAST_RMQ_ADDRESS $PODCAST_RMQ_ADDRESS
 ##
 ## Sendgrid
