@@ -26,9 +26,6 @@ env:
   PODCAST_RMQ_ADDRESS_production: ${{ secrets.PODCAST_RMQ_ADDRESS_production  }}
   AWS_REGION_development: ${{ secrets.AWS_REGION_development  }}
   AWS_REGION_production: ${{ secrets.AWS_REGION_production  }}
-  #  PODBEAN_CLIENT_ID: ${{ secrets.PODBEAN_CLIENT_ID  }}
-  #  PODBEAN_CLIENT_SECRET: ${{ secrets.PODBEAN_CLIENT_SECRET  }}
-  #  AWS_REGION: ${{ secrets.AWS_REGION  }}
 
 on:
   create:

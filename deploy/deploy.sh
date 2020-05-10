@@ -9,9 +9,6 @@ fi
 export PODCAST_PIPELINE_S3_INPUT_BUCKET_NAME=podcast-input-bucket${BUCKET_SUFFIX}
 export PODCAST_PIPELINE_S3_OUTPUT_BUCKET_NAME=podcast-output-bucket${BUCKET_SUFFIX}
 
-
-
-
 #####
 export BP_MODE="development"
 if [ "$GITHUB_EVENT_NAME" = "create" ]; then
@@ -37,15 +34,16 @@ if [[ "$BP_MODE" = "development" ]]; then
     APP_NAME=${APP_NAME}_${BP_MODE}
 fi
 
-cf push -k 2GB -m 2GB -b java_buildpack --no-start -p target/api-0.0.1-SNAPSHOT.jar ${APP_NAME}
+ROUTE_HOSTNAME=bootiful-podcast-api-${BP_MODE:-development}
+
+cf push -k 2GB -m 2GB -b java_buildpack --no-start --no-route -p target/api-0.0.1-SNAPSHOT.jar ${APP_NAME}
+
 
 cf set-env $APP_NAME JBP_CONFIG_OPEN_JDK_JRE '{ jre: { version: 11.+}}'
 cf set-env $APP_NAME BP_MODE $BP_MODE
-
 cf set-env $APP_NAME SPRING_PROFILES_ACTIVE cloud
-
-##
-## CloudFoundry
+cf routes | grep ${ROUTE_HOSTNAME} || cf create-route bootiful-podcast cfapps.io --hostname ${ROUTE_HOSTNAME}
+cf map-route $APP_NAME cfapps.io --hostname $ROUTE_HOSTNAME
 cf set-env $APP_NAME CF_API $CF_API
 cf set-env $APP_NAME CF_API_ENDPOINT $CF_API_ENDPOINT
 cf set-env $APP_NAME CF_ORG $CF_ORG
