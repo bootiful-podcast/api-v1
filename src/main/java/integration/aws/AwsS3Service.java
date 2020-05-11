@@ -15,7 +15,6 @@ import java.net.URI;
 import java.util.logging.Logger;
 
 @Log4j2
-
 public class AwsS3Service {
 
 	private final String inputBucketName;
@@ -23,8 +22,6 @@ public class AwsS3Service {
 	private final String outputBucketName;
 
 	private final AmazonS3 s3;
-
-	private final Log log = LogFactory.getLog(getClass());
 
 	public AwsS3Service(String inputBucketName, String outputBucketName, AmazonS3 s3) {
 		this.s3 = s3;
