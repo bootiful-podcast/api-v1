@@ -45,9 +45,10 @@ class Step3PodbeanIntegrationConfiguration {
 			AwsS3Service s3Service, AmqpTemplate template, ConnectionFactory connectionFactory,
 			PodcastRepository repository, PodbeanClient podbeanClient, PipelineProperties pipelineProperties) {
 
+		// todo why doesnt this work?
 		var publishPodbeanPodcasts = Stream.of(context.getEnvironment().getActiveProfiles())
 				.anyMatch(p -> p.equalsIgnoreCase("production"));
-		var episodeStatus = publishPodbeanPodcasts ? EpisodeStatus.PUBLISH : EpisodeStatus.DRAFT;
+		var episodeStatus = EpisodeStatus.PUBLISH;
 
 		var siteGeneratorRequests = Amqp//
 				.outboundAdapter(template)//
