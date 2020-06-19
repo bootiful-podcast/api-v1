@@ -81,7 +81,6 @@ class Step3PodbeanIntegrationConfiguration {
 					var jpgFile = new File(podbeanDirectory, jpgFileName);
 					this.downloadFromS3(s3Service, podcast, jpgFile, jpgFileName);
 					var jpgUpload = podbeanClient.upload(MediaType.IMAGE_JPEG, jpgFile, jpgFile.length());
-
 					var episode = podbeanClient.publishEpisode(podcast.getTitle(), podcast.getDescription(),
 							episodeStatus, EpisodeType.PUBLIC, mp3Upload.getFileKey(), jpgUpload.getFileKey());
 					publisher.publishEvent(new PodcastPublishedToPodbeanEvent(podcast.getUid(), episode.getMediaUrl(),
