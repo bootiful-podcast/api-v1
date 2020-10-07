@@ -13,19 +13,14 @@ import org.apache.lucene.index.Term;
 import org.jsoup.Jsoup;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -95,18 +90,17 @@ class SearchController {
 
 	private void refresh() {
 		synchronized (this.monitor) {
-			if (log.isInfoEnabled()) {
-				log.info("refresh(): there are " + podcasts.size() + " episodes");
-			}
 			var podcasts = this.repository.findAll();
 			for (var p : podcasts) {
 				this.podcasts.put(p.getUid(), PodcastView.from(p));
-				log.info(p);
+				log.info("indexing Podcast(UID={}, title={})", p.getUid(), p.getTitle());
 			}
 			this.luceneTemplate.write(podcasts, podcast -> {
 				var doc = buildPodcastDocument(podcast);
 				return new DocumentWriteMapper.DocumentWrite(new Term("uid", podcast.getUid()), doc);
 			});
+			log.info("we've indexed are " + this.podcasts.size() + " episodes.");
+
 		}
 	}
 
