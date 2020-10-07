@@ -71,7 +71,8 @@ class Step3PodbeanIntegrationConfiguration {
 						log.warn(msg);
 					}
 					return r;
-				}).handle((GenericHandler<Podcast>) (podcast, messageHeaders) -> {
+				}) //
+				.handle((GenericHandler<Podcast>) (podcast, messageHeaders) -> {
 					var mp3FileName = fileNameFor(podcast, "mp3");
 					var mp3File = new File(podbeanDirectory, mp3FileName);
 					this.downloadFromS3(s3Service, podcast, mp3File, mp3FileName);
