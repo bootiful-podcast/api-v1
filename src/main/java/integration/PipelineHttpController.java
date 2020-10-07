@@ -1,6 +1,7 @@
 package integration;
 
 import integration.aws.AwsS3Service;
+import integration.database.Podcast;
 import integration.database.PodcastRepository;
 import integration.utils.CopyUtils;
 import lombok.SneakyThrows;
@@ -31,8 +32,6 @@ class PipelineHttpController {
 
 	private final String accessControlAllowOriginHeaderValue = "https://bootifulpodcast.fm";
 
-	private final AwsS3Service s3;
-
 	private final PodcastRepository podcastRepository;
 
 	private final String processingMessage = "processing";
@@ -43,13 +42,9 @@ class PipelineHttpController {
 
 	private final MediaType audioContentType = MediaType.parseMediaType("audio/mpeg");
 
-	// parseMediaType("binary/octet-stream");
-
-	PipelineHttpController(PipelineProperties props, AwsS3Service s3, PodcastRepository repository,
-			PipelineService service) {
+	PipelineHttpController(PipelineProperties props, PodcastRepository repository, PipelineService service) {
 		this.file = CopyUtils.ensureDirectoryExists(props.getS3().getStagingDirectory());
 		this.service = service;
-		this.s3 = s3;
 		this.podcastRepository = repository;
 	}
 
