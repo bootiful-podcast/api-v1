@@ -25,6 +25,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -109,7 +110,11 @@ class LuceneSearchController {
 			}
 			var podcasts = this.repository.findAll();
 			for (var p : podcasts) {
-				this.podcasts.put(p.getUid(), p);
+				var podcast = new Podcast(p.getId(), p.getUid(), p.getTitle(), p.getDescription(), "", "",
+						p.getS3AudioUri(), p.getS3PhotoUri(), p.getS3AudioFileName(), p.getS3PhotoFileName(),
+						p.getPodbeanDraftCreated(), p.getPodbeanDraftPublished(), p.getPodbeanMediaUri(),
+						p.getPodbeanPhotoUri(), p.getDate(), Collections.emptyList(), Collections.emptyList());
+				this.podcasts.put(p.getUid(), podcast);
 				log.info(p);
 			}
 			this.luceneTemplate.write(podcasts, podcast -> {
