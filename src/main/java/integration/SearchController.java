@@ -33,15 +33,12 @@ class SearchController {
 
 	private final LuceneTemplate luceneTemplate;
 
-	private final RestTemplate restTemplate;
-
 	private final int maxResults = 1000;
 
 	private final Object monitor = new Object();
 
 	private final Map<String, Podcast> podcasts = new ConcurrentHashMap<>();
 
-	// private final Collection<Podcast> podcasts = new ConcurrentLinkedQueue<>();
 	private final PodcastRepository repository;
 
 	@GetMapping("/podcasts/search")
