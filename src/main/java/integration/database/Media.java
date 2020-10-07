@@ -17,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @Entity
 @Builder
-class Media {
+public class Media {
 
 	@Id
 	@GeneratedValue

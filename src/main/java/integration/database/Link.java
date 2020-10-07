@@ -17,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-class Link {
+public class Link {
 
 	@Id
 	@GeneratedValue

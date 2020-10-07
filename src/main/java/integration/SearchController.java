@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 @Log4j2
 @RestController
 @RequiredArgsConstructor
-class LuceneSearchController {
+class SearchController {
 
 	private final LuceneTemplate luceneTemplate;
 
@@ -80,17 +80,7 @@ class LuceneSearchController {
 	}
 
 	private List<String> searchIndex(String queryStr, int maxResults) throws Exception {
-		return luceneTemplate.search(queryStr, maxResults, document -> document.get("uid"));
-	}
-
-	@Deprecated
-	private Iterable<Podcast> loadPodcasts() {
-		var podcastsJsonUri = URI.create("http://bootifulpodcast.fm/podcasts.json");
-		var responseEntity = this.restTemplate.exchange(podcastsJsonUri, HttpMethod.GET, null,
-				new ParameterizedTypeReference<Collection<Podcast>>() {
-				});
-		Assert.isTrue(responseEntity.getStatusCode().is2xxSuccessful(), () -> "the HTTP response should be 200x");
-		return responseEntity.getBody();
+		return this.luceneTemplate.search(queryStr, maxResults, document -> document.get("uid"));
 	}
 
 	@EventListener(PodcastPublishedToPodbeanEvent.class)
@@ -110,11 +100,7 @@ class LuceneSearchController {
 			}
 			var podcasts = this.repository.findAll();
 			for (var p : podcasts) {
-				var podcast = new Podcast(p.getId(), p.getUid(), p.getTitle(), p.getDescription(), "", "",
-						p.getS3AudioUri(), p.getS3PhotoUri(), p.getS3AudioFileName(), p.getS3PhotoFileName(),
-						p.getPodbeanDraftCreated(), p.getPodbeanDraftPublished(), p.getPodbeanMediaUri(),
-						p.getPodbeanPhotoUri(), p.getDate(), Collections.emptyList(), Collections.emptyList());
-				this.podcasts.put(p.getUid(), podcast);
+				this.podcasts.put(p.getUid(), PodcastView.from(p));
 				log.info(p);
 			}
 			this.luceneTemplate.write(podcasts, podcast -> {

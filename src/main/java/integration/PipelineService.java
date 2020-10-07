@@ -5,13 +5,11 @@ import integration.aws.AwsS3Service;
 import integration.database.Podcast;
 import integration.database.PodcastRepository;
 import integration.self.ServerUriResolver;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.util.ReflectionUtils;
 
 import java.io.File;
 import java.io.IOException;

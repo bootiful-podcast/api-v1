@@ -1,7 +1,5 @@
 package integration;
 
-import integration.aws.AwsS3Service;
-import integration.database.Podcast;
 import integration.database.PodcastRepository;
 import integration.utils.CopyUtils;
 import lombok.SneakyThrows;
@@ -18,13 +16,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
 @Log4j2
 @RestController
-class PipelineHttpController {
+class PipelineController {
 
 	private final File file;
 
@@ -42,10 +40,18 @@ class PipelineHttpController {
 
 	private final MediaType audioContentType = MediaType.parseMediaType("audio/mpeg");
 
-	PipelineHttpController(PipelineProperties props, PodcastRepository repository, PipelineService service) {
+	PipelineController(PipelineProperties props, PodcastRepository repository, PipelineService service) {
 		this.file = CopyUtils.ensureDirectoryExists(props.getS3().getStagingDirectory());
 		this.service = service;
 		this.podcastRepository = repository;
+	}
+
+	@GetMapping("/podcasts")
+	ResponseEntity<Collection<PodcastView>> all() {
+		var all = this.podcastRepository.findAll();
+		var out = new ArrayList<PodcastView>();
+		all.forEach(x -> out.add(PodcastView.from(x)));
+		return ResponseEntity.ok(out);
 	}
 
 	@GetMapping("/podcasts/{uid}/status")
@@ -74,7 +80,6 @@ class PipelineHttpController {
 		var list = new ArrayList<>(
 				requestEntity.getHeaders().getOrDefault(HttpHeaders.REFERER.toLowerCase(), new ArrayList<>()));
 		list.add(requestEntity.getHeaders().getOrigin());
-
 		return list//
 				.stream()//
 				.filter(Objects::nonNull)//
@@ -89,8 +94,7 @@ class PipelineHttpController {
 	@SneakyThrows
 	@GetMapping("/podcasts/{uid}/profile-photo")
 	ResponseEntity<Resource> getProfilePhotoMedia(RequestEntity<?> requestEntity, @PathVariable String uid) {
-
-		PipelineService.S3Resource podcastPhotoMedia = service.getPodcastPhotoMedia(uid);
+		var podcastPhotoMedia = service.getPodcastPhotoMedia(uid);
 		return ResponseEntity.ok()//
 				.header("X-Podcast-UID", uid)//
 				.header(HttpHeaders.ACCEPT_RANGES, "none")//
@@ -103,7 +107,7 @@ class PipelineHttpController {
 	@SneakyThrows
 	@GetMapping({ "/podcasts/{uid}/produced-audio", "/podcasts/{uid}/produced-audio.mp3" })
 	ResponseEntity<Resource> getProducedAudioMedia(RequestEntity<?> requestEntity, @PathVariable String uid) {
-		PipelineService.S3Resource podcastAudioMedia = service.getPodcastAudioMedia(uid);
+		var podcastAudioMedia = service.getPodcastAudioMedia(uid);
 		return ResponseEntity.ok()//
 				.header("X-Podcast-UID", uid)//
 				.contentType(this.audioContentType)//

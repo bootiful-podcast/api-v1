@@ -10,7 +10,6 @@ import integration.events.PodcastProcessedEvent;
 import integration.utils.JsonHelper;
 import integration.utils.PipelineUtils;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;

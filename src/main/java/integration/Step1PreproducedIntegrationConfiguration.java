@@ -1,17 +1,11 @@
 package integration;
 
-import integration.events.PodcastArchiveUploadedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.MessageChannels;
-import org.springframework.integration.handler.GenericHandler;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHeaders;
 
 /**
  * This skips the the upload preparation and the Python-based processor and goes straight
