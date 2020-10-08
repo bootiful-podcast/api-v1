@@ -40,18 +40,20 @@ class PipelineController {
 
 	private final MediaType audioContentType = MediaType.parseMediaType("audio/mpeg");
 
-	PipelineController(PipelineProperties props, PodcastRepository repository, PipelineService service) {
+	private final PodcastViewService podcastViewService;
+
+	PipelineController(PipelineProperties props, PodcastViewService podcastViewService, PodcastRepository repository,
+			PipelineService service) {
 		this.file = CopyUtils.ensureDirectoryExists(props.getS3().getStagingDirectory());
 		this.service = service;
+		this.podcastViewService = podcastViewService;
 		this.podcastRepository = repository;
 	}
 
 	@GetMapping("/podcasts")
 	ResponseEntity<Collection<PodcastView>> all() {
-		var all = this.podcastRepository.findAll();
-		var out = new ArrayList<PodcastView>();
-		all.forEach(x -> out.add(PodcastView.from(x)));
-		return ResponseEntity.ok(out);
+		var all = podcastViewService.from(this.podcastRepository.findAll());
+		return ResponseEntity.ok(all);
 	}
 
 	@GetMapping("/podcasts/{uid}/status")

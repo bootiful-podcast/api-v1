@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.Collection;
 import java.util.List;
@@ -57,12 +56,12 @@ class SearchController {
 	}
 
 	@SneakyThrows
-	private Document buildPodcastDocument(Podcast podcast) {
+	private Document buildPodcastDocument(PodcastView podcast) {
 		var document = new Document();
 		document.add(new StringField("id", Long.toString(podcast.getId()), Field.Store.YES));
 		document.add(new StringField("uid", podcast.getUid(), Field.Store.YES));
 		document.add(new TextField("title", podcast.getTitle(), Field.Store.YES));
-		document.add(new TextField("description", html2text(podcast.getDescription()), Field.Store.YES));
+		document.add(new TextField("description", html2text(podcast.getHtmlDescription()), Field.Store.YES));
 		document.add(new LongPoint("time", podcast.getDate().getTime()));
 		return document;
 	}
@@ -85,11 +84,13 @@ class SearchController {
 		this.refresh();
 	}
 
+	private final PodcastViewService podcastViewService;
+
 	private void refresh() {
 		synchronized (this.monitor) {
-			var podcasts = this.repository.findAll();
+			var podcasts = this.podcastViewService.from(this.repository.findAll());
 			for (var p : podcasts) {
-				this.podcasts.put(p.getUid(), PodcastView.from(p));
+				this.podcasts.put(p.getUid(), p);
 				log.info("indexing Podcast(UID={}, title={})", p.getUid(), p.getTitle());
 			}
 			this.luceneTemplate.write(podcasts, podcast -> {
