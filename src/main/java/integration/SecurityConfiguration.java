@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -17,16 +18,19 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
 @Configuration
+@CrossOrigin(SecurityConfiguration.CLIENT_HOSTNAME)
 class SecurityConfiguration {
 
-	// todo figure out how to authenticate with users/passwords in an encrypted database
-	// todo figure out how to mask only parts of the API
+	static final String CLIENT_HOSTNAME = "http://localhost:8081/";
 
 	@Bean
 	UserDetailsService jdbcUserDetailsService(UserRepository repository) {
@@ -38,19 +42,29 @@ class SecurityConfiguration {
 		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
 	}
 
-	/*
-	 * @Bean UserDetailsService authentication() { return new
-	 * InMemoryUserDetailsManager(User.withDefaultPasswordEncoder()// .username("jlong")//
-	 * .password("password")// .roles("USER")// .build()// ); }
-	 */
+	@Bean
+	WebMvcConfigurer corsConfigurer() {
+		return new WebMvcConfigurer() {
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				registry.addMapping("/**").allowedMethods("PUT", "OPTIONS", "GET", "POST", "DELETE");
+			}
+		};
+	}
 
 	@Configuration
 	public static class MyConfig extends WebSecurityConfigurerAdapter {
 
 		@Override
 		protected void configure(HttpSecurity http) throws Exception {
-			http.cors(Customizer.withDefaults()) //
-					.authorizeRequests(ae -> ae.mvcMatchers("/podcasts/{uid}").authenticated().anyRequest().permitAll()) //
+			http//
+					.cors(Customizer.withDefaults()) //
+					.authorizeRequests(ae -> ae//
+							.mvcMatchers(HttpMethod.POST, "/podcasts/{uid}").authenticated()//
+							.mvcMatchers("/token").permitAll()//
+							.mvcMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+					// .anyRequest().permitAll() //
+					) //
 					.oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
 		}
 
