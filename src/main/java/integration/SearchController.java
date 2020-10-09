@@ -42,6 +42,7 @@ class SearchController {
 
 	@GetMapping("/podcasts/search")
 	Collection<Podcast> search(@RequestParam String query) throws Exception {
+		log.info("search query: [" + query + "]");
 		var idsThatMatch = searchIndex(query, maxResults);
 		var out = this.podcasts.values().stream().filter(p -> idsThatMatch.contains(p.getUid()))
 				.collect(Collectors.toList());

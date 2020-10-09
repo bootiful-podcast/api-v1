@@ -123,8 +123,8 @@ class JdbcUserDetailsService implements UserDetailsService {
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-		var byUsername = this.userRepository.findByUsername(username).stream().map(JpaUserDetails::new)
-				.collect(Collectors.toList());
+		var byUsername = this.userRepository.findByUsernameIgnoreCase((username + "").toLowerCase()).stream()
+				.map(JpaUserDetails::new).collect(Collectors.toList());
 
 		if (byUsername.size() != 1) {
 			throw new UsernameNotFoundException(
