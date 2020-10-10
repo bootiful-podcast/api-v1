@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -18,19 +17,17 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.stream.Collectors;
+//todo go back in history and restore the SecurityConfiguration that used to be here
+// todo also go back into the pom.xml and restore the jwt-spring-boot-starter
 
 @Configuration
-@CrossOrigin(SecurityConfiguration.CLIENT_HOSTNAME)
-class SecurityConfiguration {
-
-	static final String CLIENT_HOSTNAME = "http://localhost:8081/";
+class CorsConfig {
 
 	@Bean
 	UserDetailsService jdbcUserDetailsService(UserRepository repository) {
@@ -42,6 +39,21 @@ class SecurityConfiguration {
 		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
 	}
 
+	/*
+	 * // todo figure out with rob what im supposed to do here :)
+	 *
+	 * @Configuration public static class MyConfig extends WebSecurityConfigurerAdapter {
+	 *
+	 * @Override protected void configure(HttpSecurity http) throws Exception { http
+	 * .cors(Customizer.withDefaults()) .authorizeRequests(ae -> ae
+	 * .anyRequest().anonymous() )
+	 * .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt); }
+	 *
+	 * }
+	 *
+	 *
+	 */
+
 	@Bean
 	WebMvcConfigurer corsConfigurer() {
 		return new WebMvcConfigurer() {
@@ -50,24 +62,6 @@ class SecurityConfiguration {
 				registry.addMapping("/**").allowedMethods("PUT", "OPTIONS", "GET", "POST", "DELETE");
 			}
 		};
-	}
-
-	@Configuration
-	public static class MyConfig extends WebSecurityConfigurerAdapter {
-
-		@Override
-		protected void configure(HttpSecurity http) throws Exception {
-			http//
-					.cors(Customizer.withDefaults()) //
-					.authorizeRequests(ae -> ae//
-							.mvcMatchers(HttpMethod.POST, "/podcasts/{uid}").authenticated()//
-							.mvcMatchers("/token").permitAll()//
-							.mvcMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-					// .anyRequest().permitAll() //
-					) //
-					.oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
-		}
-
 	}
 
 }

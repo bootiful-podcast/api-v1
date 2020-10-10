@@ -76,6 +76,7 @@
             <artifactId>lucene-analyzers-icu</artifactId>
             <version>${lucene.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.joshlong.jwt</groupId>
             <artifactId>jwt-spring-boot-starter</artifactId>
