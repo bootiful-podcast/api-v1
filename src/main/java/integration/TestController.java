@@ -30,10 +30,9 @@ class TestController {
 
 	@PostMapping("/test-upload/{uid}")
 	ResponseEntity<?> beginProduction(@PathVariable("uid") String uid, @RequestParam("file") MultipartFile file)
-			throws Exception {
-
-		log.info("going to upload (" + uid + ") a new file (" + file.getOriginalFilename() + ") to ");
-		var newFile = new File(this.file, uid);
+		throws Exception {
+		var newFile = new File(this.file, uid + ".zip");
+		log.info("going to upload (" + uid + ") a new file (" + file.getOriginalFilename() + ") to " + newFile.getAbsolutePath() + "");
 		file.transferTo(newFile);
 		CopyUtils.assertFileExists(newFile);
 		log.info("the newly POST'd file lives at " + newFile.getAbsolutePath() + '.');
