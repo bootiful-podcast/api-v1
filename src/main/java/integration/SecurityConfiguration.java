@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -40,18 +40,18 @@ class CorsConfig {
 	}
 
 	/*
-	 * // todo figure out with rob what im supposed to do here :)
+	 * @Configuration
 	 *
-	 * @Configuration public static class MyConfig extends WebSecurityConfigurerAdapter {
+	 * @RequiredArgsConstructor public static class WebmvcSecurityConfiguration extends
+	 * WebSecurityConfigurerAdapter {
 	 *
-	 * @Override protected void configure(HttpSecurity http) throws Exception { http
-	 * .cors(Customizer.withDefaults()) .authorizeRequests(ae -> ae
-	 * .anyRequest().anonymous() )
-	 * .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt); }
+	 * @Override protected void configure(HttpSecurity builder) throws Exception { String
+	 * url = "/test-upload/**";
 	 *
-	 * }
-	 *
-	 *
+	 * builder// .requestMatchers(c -> { c.mvcMatchers(url); })//
+	 * .csrf(AbstractHttpConfigurer::disable)// .cors(Customizer.withDefaults())//
+	 * .authorizeRequests(ae -> ae.mvcMatchers(url).authenticated())//
+	 * .httpBasic(Customizer.withDefaults())// ; } }
 	 */
 
 	@Bean
