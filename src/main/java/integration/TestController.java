@@ -4,6 +4,8 @@ import integration.utils.CopyUtils;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,8 +31,9 @@ class TestController {
 	}
 
 	@PostMapping("/test-upload/{uid}")
-	ResponseEntity<?> beginProduction(@PathVariable("uid") String uid, @RequestParam("file") MultipartFile file)
-			throws Exception {
+	ResponseEntity<?> beginProduction(@AuthenticationPrincipal java.security.Principal principal,
+			@PathVariable("uid") String uid, @RequestParam("file") MultipartFile file) throws Exception {
+		log.info("got the authenticated principal: " + principal);
 		var newFile = new File(this.file, uid + ".zip");
 		log.info("going to upload (" + uid + ") a new file (" + file.getOriginalFilename() + ") to "
 				+ newFile.getAbsolutePath() + "");
