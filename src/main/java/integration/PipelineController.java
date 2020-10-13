@@ -56,6 +56,9 @@ class PipelineController {
 		return ResponseEntity.ok(all);
 	}
 
+	// todo include this in the security config once were sure everythings moved on
+	// without it
+
 	@GetMapping("/podcasts/{uid}/status")
 	ResponseEntity<?> getStatusForPodcast(@PathVariable String uid) {
 		var byUid = podcastRepository.findByUid(uid);

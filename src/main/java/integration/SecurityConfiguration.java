@@ -12,7 +12,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,8 +19,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.DefaultSecurityFilterChain;
-import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -35,26 +32,23 @@ import java.util.stream.Collectors;
 @Configuration
 class CorsConfig {
 
-	/*
-	 *
-	 * @Bean DefaultSecurityFilterChain authorization( HttpSecurity httpSecurity) throws
-	 * Exception { DefaultSecurityFilterChain build = httpSecurity .authorizeRequests(ae
-	 * -> ae .mvcMatchers("/test-upload/**").authenticated() .anyRequest().permitAll() )
-	 * .cors(Customizer.withDefaults()) .oauth2ResourceServer(x -> x.jwt())
-	 * .csrf(AbstractHttpConfigurer::disable) //
-	 * .csrf(ServerHttpSecurity.CsrfSpec::disable) .build(); return build;
-	 *
-	 * }
-	 */
-
 	@Configuration
 	public static class MyConfig extends WebSecurityConfigurerAdapter {
 
 		@Override
 		protected void configure(HttpSecurity http) throws Exception {
-			http.authorizeRequests(ae -> ae.mvcMatchers("/test-upload/**").authenticated().mvcMatchers("/podcasts/**")
-					.authenticated().anyRequest().permitAll()).cors(Customizer.withDefaults())
-					.oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt).csrf(AbstractHttpConfigurer::disable);
+			http //
+					.authorizeRequests(ae -> ae //
+							.mvcMatchers("/test-upload/**").authenticated() //
+							.mvcMatchers("/podcasts/search").authenticated() //
+							.mvcMatchers("/podcasts/index").authenticated() //
+							.mvcMatchers("/podcasts").authenticated() //
+							.mvcMatchers(HttpMethod.POST, "/podcasts/**").authenticated() //
+							.anyRequest().permitAll() //
+					) //
+					.cors(Customizer.withDefaults())//
+					.oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)//
+					.csrf(AbstractHttpConfigurer::disable);
 
 		}
 
